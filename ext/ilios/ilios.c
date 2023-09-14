@@ -4,6 +4,7 @@ VALUE mIlios;
 VALUE mCassandra;
 VALUE cSession;
 VALUE cStatement;
+VALUE cResult;
 VALUE eConnectError;
 VALUE eExecutionError;
 
@@ -24,6 +25,7 @@ void Init_ilios(void)
     mCassandra = rb_define_module_under(mIlios, "Cassandra");
     cSession = rb_define_class_under(mCassandra, "Session", rb_cObject);
     cStatement = rb_define_class_under(mCassandra, "Statement", rb_cObject);
+    cResult = rb_define_class_under(mCassandra, "Result", rb_cObject);
     eConnectError = rb_define_class_under(mCassandra, "ConnectError", rb_eStandardError);
     eExecutionError = rb_define_class_under(mCassandra, "ExecutionError", rb_eStandardError);
 
@@ -36,4 +38,5 @@ void Init_ilios(void)
 
     Init_cassandra();
     Init_session();
+    Init_result();
 }

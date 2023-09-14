@@ -50,14 +50,29 @@ static VALUE session_execute(VALUE self, VALUE statement)
 {
     CassandraSession *cassandra_session;
     CassandraStatement *cassandra_statement;
+    CassandraResult *cassandra_result;
     CassFuture *result_future;
+    VALUE cassandra_result_obj;
 
     TypedData_Get_Struct(self, CassandraSession, &cassandra_session_data_type, cassandra_session);
     TypedData_Get_Struct(statement, CassandraStatement, &cassandra_statement_data_type, cassandra_statement);
 
     result_future = cass_session_execute(cassandra_session->session, cassandra_statement->statement);
-    cass_future_free(result_future);
-    return Qnil;
+    if (cass_future_error_code(result_future) != CASS_OK) {
+        char error[4096] = { 0 };
+
+        strncpy(error, cass_error_desc(cass_future_error_code(result_future)), sizeof(error));
+        cass_future_free(result_future);
+        rb_raise(eExecutionError, "Unable to execute: %s", error);
+    }
+
+    cassandra_result = ALLOC(CassandraResult);
+    memset(cassandra_result, 0, sizeof(CassandraResult));
+    cassandra_result_obj = TypedData_Wrap_Struct(cResult, &cassandra_result_data_type, cassandra_result);
+    cassandra_result->result = cass_future_get_result(result_future);
+    cassandra_result->future = result_future;
+
+    return cassandra_result_obj;
 }
 
 static void session_destroy(void *ptr)

@@ -18,13 +18,21 @@ typedef struct
     CassStatement* statement;
 } CassandraStatement;
 
+typedef struct
+{
+    const CassResult *result;
+    CassFuture *future;
+} CassandraResult;
+
 extern const rb_data_type_t cassandra_session_data_type;
 extern const rb_data_type_t cassandra_statement_data_type;
+extern const rb_data_type_t cassandra_result_data_type;
 
 extern VALUE mIlios;
 extern VALUE mCassandra;
 extern VALUE cSession;
 extern VALUE cStatement;
+extern VALUE cResult;
 extern VALUE eConnectError;
 extern VALUE eExecutionError;
 
@@ -37,5 +45,6 @@ extern VALUE sym_max_speculative_executions;
 
 extern void Init_cassandra(void);
 extern void Init_session(void);
+extern void Init_result(void);
 
 #endif // ILIOS_H

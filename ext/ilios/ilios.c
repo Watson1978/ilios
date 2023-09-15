@@ -19,7 +19,10 @@ void Init_ilios(void)
 {
     // Use Ruby's memory allocator in cassandra-cpp-driver in order to notify memory usage in library
     // and work Ruby's GC properly.
+#if 0
+    // Cause SEGV in cass_session_close()
     cass_alloc_set_functions(xmalloc, xrealloc, xfree);
+#endif
 
     mIlios = rb_define_module("Ilios");
     mCassandra = rb_define_module_under(mIlios, "Cassandra");

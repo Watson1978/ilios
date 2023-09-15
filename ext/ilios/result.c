@@ -93,6 +93,8 @@ static size_t result_memsize(const void *ptr)
 
 void Init_result(void)
 {
+    rb_undef_alloc_func(cResult);
+
     rb_include_module(cResult, rb_mEnumerable);
 
     rb_define_method(cResult, "each", result_each, 0);

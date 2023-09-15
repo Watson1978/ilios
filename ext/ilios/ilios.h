@@ -46,6 +46,7 @@ extern VALUE sym_max_speculative_executions;
 
 extern void Init_cassandra(void);
 extern void Init_session(void);
+extern void Init_statement(void);
 extern void Init_result(void);
 
 #endif // ILIOS_H

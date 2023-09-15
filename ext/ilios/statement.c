@@ -35,3 +35,8 @@ static size_t statement_memsize(const void *ptr)
 {
     return sizeof(CassandraStatement);
 }
+
+void Init_statement(void)
+{
+    rb_undef_alloc_func(cStatement);
+}

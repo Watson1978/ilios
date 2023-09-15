@@ -43,5 +43,6 @@ void Init_ilios(void)
 
     Init_cassandra();
     Init_session();
+    Init_statement();
     Init_result();
 }

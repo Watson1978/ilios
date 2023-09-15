@@ -107,6 +107,8 @@ static size_t session_memsize(const void *ptr)
 
 void Init_session(void)
 {
+    rb_undef_alloc_func(cSession);
+
     rb_define_method(cSession, "prepare", session_prepare, 1);
     rb_define_method(cSession, "execute", session_execute, 1);
 }

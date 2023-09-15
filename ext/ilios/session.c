@@ -83,18 +83,16 @@ static void session_destroy(void *ptr)
         CassFuture *close_future = cass_session_close(cassandra_session->session);
         cass_future_wait(close_future);
         cass_future_free(close_future);
+        cass_session_free(cassandra_session->session);
     }
     if (cassandra_session->connect_future) {
         cass_future_free(cassandra_session->connect_future);
     }
-    if (cassandra_session->session) {
-        cass_session_free(cassandra_session->session);
-    }
     if (cassandra_session->cluster) {
         cass_cluster_free(cassandra_session->cluster);
     }
-    cassandra_session->connect_future = NULL;
     cassandra_session->session = NULL;
+    cassandra_session->connect_future = NULL;
     cassandra_session->cluster = NULL;
 }
 

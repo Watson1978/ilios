@@ -30,7 +30,7 @@ VALUE result_each(VALUE self)
     iterator = cass_iterator_from_result(cassandra_result->result);
     column_count = cass_result_column_count(cassandra_result->result);
     while (cass_iterator_next(iterator)) {
-        VALUE row_array = rb_ary_new();
+        VALUE row_array = rb_ary_new2(column_count);
         const CassRow *row = cass_iterator_get_row(iterator);
         for (size_t i = 0; i < column_count; i++) {
             const CassValue *value = cass_row_get_column(row, i);

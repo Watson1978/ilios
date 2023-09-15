@@ -15,7 +15,6 @@ VALUE sym_hosts;
 VALUE sym_timeout_ms;
 VALUE sym_constant_delay_ms;
 VALUE sym_max_speculative_executions;
-VALUE sym_connections_per_local_node;
 
 void Init_ilios(void)
 {
@@ -41,7 +40,6 @@ void Init_ilios(void)
     sym_timeout_ms = ID2SYM(rb_intern("timeout_ms"));
     sym_constant_delay_ms = ID2SYM(rb_intern("constant_delay_ms"));
     sym_max_speculative_executions = ID2SYM(rb_intern("max_speculative_executions"));
-    sym_connections_per_local_node = ID2SYM(rb_intern("connections_per_local_node"));
 
     Init_cassandra();
     Init_session();

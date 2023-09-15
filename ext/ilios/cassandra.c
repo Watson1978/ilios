@@ -7,7 +7,6 @@ static VALUE cassandra_connect(VALUE self)
     VALUE config;
     VALUE hosts;
     VALUE keyspace;
-    VALUE connections_per_local_node;
     char last_error[4096] = { 0 };
 
     cassandra_session = ALLOC(CassandraSession);
@@ -19,11 +18,6 @@ static VALUE cassandra_connect(VALUE self)
     config = rb_cvar_get(self, id_cvar_config);
     cass_cluster_set_request_timeout(cassandra_session->cluster, NUM2UINT(rb_hash_aref(config, sym_timeout_ms)));
     cass_cluster_set_constant_speculative_execution_policy(cassandra_session->cluster, NUM2LONG(rb_hash_aref(config, sym_constant_delay_ms)), NUM2INT(rb_hash_aref(config, sym_max_speculative_executions)));
-
-    connections_per_local_node = rb_hash_aref(config, sym_connections_per_local_node);
-    if (!NIL_P(connections_per_local_node)) {
-        cass_cluster_set_max_connections_per_host(cassandra_session->cluster, NUM2UINT(connections_per_local_node));
-    }
 
     keyspace = rb_hash_aref(config, sym_keyspace);
     hosts = rb_hash_aref(config, sym_hosts);

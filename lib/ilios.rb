@@ -11,7 +11,6 @@ module Ilios
       timeout_ms: 5_000,
       constant_delay_ms: 15_000,
       max_speculative_executions: 2,
-      connections_per_local_node: nil, # If need, it set integer value
     }
 
     def self.config=(config)

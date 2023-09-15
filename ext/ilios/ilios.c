@@ -9,11 +9,13 @@ VALUE eConnectError;
 VALUE eExecutionError;
 
 VALUE id_cvar_config;
+VALUE id_shuffle;
 VALUE sym_keyspace;
 VALUE sym_hosts;
 VALUE sym_timeout_ms;
 VALUE sym_constant_delay_ms;
 VALUE sym_max_speculative_executions;
+VALUE sym_connections_per_local_node;
 
 void Init_ilios(void)
 {
@@ -33,11 +35,13 @@ void Init_ilios(void)
     eExecutionError = rb_define_class_under(mCassandra, "ExecutionError", rb_eStandardError);
 
     id_cvar_config = rb_intern("@@config");
+    id_shuffle = rb_intern("shuffle");
     sym_keyspace = ID2SYM(rb_intern("keyspace"));
     sym_hosts = ID2SYM(rb_intern("hosts"));
     sym_timeout_ms = ID2SYM(rb_intern("timeout_ms"));
     sym_constant_delay_ms = ID2SYM(rb_intern("constant_delay_ms"));
     sym_max_speculative_executions = ID2SYM(rb_intern("max_speculative_executions"));
+    sym_connections_per_local_node = ID2SYM(rb_intern("connections_per_local_node"));
 
     Init_cassandra();
     Init_session();

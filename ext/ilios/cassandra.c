@@ -7,6 +7,7 @@ static VALUE cassandra_connect(VALUE self)
     VALUE config;
     VALUE hosts;
     VALUE keyspace;
+    VALUE connections_per_local_node;
     char last_error[4096] = { 0 };
 
     cassandra_session = ALLOC(CassandraSession);
@@ -19,12 +20,23 @@ static VALUE cassandra_connect(VALUE self)
     cass_cluster_set_request_timeout(cassandra_session->cluster, NUM2UINT(rb_hash_aref(config, sym_timeout_ms)));
     cass_cluster_set_constant_speculative_execution_policy(cassandra_session->cluster, NUM2LONG(rb_hash_aref(config, sym_constant_delay_ms)), NUM2INT(rb_hash_aref(config, sym_max_speculative_executions)));
 
+    connections_per_local_node = rb_hash_aref(config, sym_connections_per_local_node);
+    if (!NIL_P(connections_per_local_node)) {
+        cass_cluster_set_max_connections_per_host(cassandra_session->cluster, NUM2UINT(connections_per_local_node));
+    }
+
     keyspace = rb_hash_aref(config, sym_keyspace);
     hosts = rb_hash_aref(config, sym_hosts);
+
     Check_Type(hosts, T_ARRAY);
     if (RARRAY_LEN(hosts) == 0) {
         rb_raise(rb_eRuntimeError, "No hosts configured");
     }
+    if (RARRAY_LEN(hosts) > 1) {
+        // To distribute connections
+        hosts = rb_funcall(hosts, id_shuffle, 0);
+    }
+
     for (int i = 0; i < RARRAY_LEN(hosts); i++) {
         VALUE host = RARRAY_AREF(hosts, i);
 
@@ -41,6 +53,9 @@ static VALUE cassandra_connect(VALUE self)
         cassandra_session->connect_future = NULL;
         cassandra_session->session = NULL;
     }
+
+    cass_cluster_free(cassandra_session->cluster);
+    cassandra_session->cluster = NULL;
 
     rb_raise(eConnectError, "Unable to connect: %s", last_error);
     return Qnil;

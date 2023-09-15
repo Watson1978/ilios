@@ -43,6 +43,8 @@ static VALUE cassandra_connect(VALUE self)
         cass_cluster_set_contact_points(cassandra_session->cluster, StringValueCStr(host));
         cassandra_session->session = cass_session_new();
         cassandra_session->connect_future =  cass_session_connect_keyspace(cassandra_session->session, cassandra_session->cluster, StringValueCStr(keyspace));
+        cass_future_wait(cassandra_session->connect_future);
+
         if (cass_future_error_code(cassandra_session->connect_future) == CASS_OK) {
             return cassandra_session_obj;
         }

@@ -27,6 +27,8 @@ static VALUE session_prepare(VALUE self, VALUE query)
     TypedData_Get_Struct(self, CassandraSession, &cassandra_session_data_type, cassandra_session);
 
     prepare_future = cass_session_prepare(cassandra_session->session, StringValueCStr(query));
+    cass_future_wait(prepare_future);
+
     if (cass_future_error_code(prepare_future) != CASS_OK) {
         char error[4096] = { 0 };
 
@@ -58,6 +60,8 @@ static VALUE session_execute(VALUE self, VALUE statement)
     TypedData_Get_Struct(statement, CassandraStatement, &cassandra_statement_data_type, cassandra_statement);
 
     result_future = cass_session_execute(cassandra_session->session, cassandra_statement->statement);
+    cass_future_wait(result_future);
+
     if (cass_future_error_code(result_future) != CASS_OK) {
         char error[4096] = { 0 };
 

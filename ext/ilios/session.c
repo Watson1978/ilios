@@ -14,7 +14,7 @@ const rb_data_type_t cassandra_session_data_type = {
 #endif
     },
     0, 0,
-    RUBY_TYPED_FREE_IMMEDIATELY | RUBY_TYPED_FROZEN_SHAREABLE,
+    RUBY_TYPED_FREE_IMMEDIATELY | RUBY_TYPED_WB_PROTECTED | RUBY_TYPED_FROZEN_SHAREABLE,
 };
 
 typedef struct {

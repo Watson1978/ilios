@@ -48,6 +48,21 @@ static VALUE session_prepare(VALUE self, VALUE query)
     return cassandra_statement_obj;
 }
 
+typedef struct {
+    CassSession* session;
+    CassStatement* statement;
+} nogvl_session_execute_args;
+
+static void *nogvl_session_execute(void *ptr)
+{
+    nogvl_session_execute_args *args = (nogvl_session_execute_args *)ptr;
+    CassFuture *result_future;
+
+    result_future = cass_session_execute(args->session, args->statement);
+    cass_future_wait(result_future);
+    return (void *)result_future;
+}
+
 static VALUE session_execute(VALUE self, VALUE statement)
 {
     CassandraSession *cassandra_session;
@@ -55,12 +70,14 @@ static VALUE session_execute(VALUE self, VALUE statement)
     CassandraResult *cassandra_result;
     CassFuture *result_future;
     VALUE cassandra_result_obj;
+    nogvl_session_execute_args args;
 
     TypedData_Get_Struct(self, CassandraSession, &cassandra_session_data_type, cassandra_session);
     TypedData_Get_Struct(statement, CassandraStatement, &cassandra_statement_data_type, cassandra_statement);
 
-    result_future = cass_session_execute(cassandra_session->session, cassandra_statement->statement);
-    cass_future_wait(result_future);
+    args.session = cassandra_session->session;
+    args.statement = cassandra_statement->statement;
+    result_future = (CassFuture *)rb_thread_call_without_gvl(nogvl_session_execute, &args, RUBY_UBF_PROCESS, 0);
 
     if (cass_future_error_code(result_future) != CASS_OK) {
         char error[4096] = { 0 };

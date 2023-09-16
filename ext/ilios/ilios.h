@@ -3,6 +3,7 @@
 
 #include <cassandra.h>
 #include "ruby.h"
+#include "ruby/thread.h"
 
 typedef struct
 {

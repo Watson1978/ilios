@@ -54,9 +54,7 @@ static VALUE session_prepare(VALUE self, VALUE query)
         rb_raise(eExecutionError, "Unable to prepare query: %s", error);
     }
 
-    cassandra_statement = ALLOC(CassandraStatement);
-    memset(cassandra_statement, 0, sizeof(CassandraStatement));
-    cassandra_statement_obj = TypedData_Wrap_Struct(cStatement, &cassandra_statement_data_type, cassandra_statement);
+    cassandra_statement_obj = TypedData_Make_Struct(cStatement, CassandraStatement, &cassandra_statement_data_type, cassandra_statement);
 
     cassandra_statement->prepared = cass_future_get_prepared(prepare_future);
     cassandra_statement->statement = cass_prepared_bind(cassandra_statement->prepared);
@@ -104,9 +102,7 @@ static VALUE session_execute(VALUE self, VALUE statement)
         rb_raise(eExecutionError, "Unable to execute: %s", error);
     }
 
-    cassandra_result = ALLOC(CassandraResult);
-    memset(cassandra_result, 0, sizeof(CassandraResult));
-    cassandra_result_obj = TypedData_Wrap_Struct(cResult, &cassandra_result_data_type, cassandra_result);
+    cassandra_result_obj = TypedData_Make_Struct(cResult, CassandraResult, &cassandra_result_data_type, cassandra_result);
     cassandra_result->result = cass_future_get_result(result_future);
     cassandra_result->future = result_future;
 

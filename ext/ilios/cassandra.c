@@ -9,9 +9,7 @@ static VALUE cassandra_connect(VALUE self)
     VALUE keyspace;
     char last_error[4096] = { 0 };
 
-    cassandra_session = ALLOC(CassandraSession);
-    memset(cassandra_session, 0, sizeof(CassandraSession));
-    cassandra_session_obj = TypedData_Wrap_Struct(cSession, &cassandra_session_data_type, cassandra_session);
+    cassandra_session_obj = TypedData_Make_Struct(cSession, CassandraSession, &cassandra_session_data_type, cassandra_session);
 
     cassandra_session->cluster = cass_cluster_new();
 

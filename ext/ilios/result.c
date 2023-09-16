@@ -82,8 +82,7 @@ static void result_destroy(void *ptr)
     if (cassandra_result->future) {
         cass_future_free(cassandra_result->future);
     }
-    cassandra_result->result = NULL;
-    cassandra_result->future = NULL;
+    xfree(cassandra_result);
 }
 
 static size_t result_memsize(const void *ptr)

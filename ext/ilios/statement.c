@@ -83,8 +83,7 @@ static void statement_destroy(void *ptr)
     if (cassandra_statement->statement) {
         cass_statement_free(cassandra_statement->statement);
     }
-    cassandra_statement->prepared = NULL;
-    cassandra_statement->statement = NULL;
+    xfree(cassandra_statement);
 }
 
 static size_t statement_memsize(const void *ptr)

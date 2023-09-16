@@ -125,9 +125,7 @@ static void session_destroy(void *ptr)
     if (cassandra_session->cluster) {
         cass_cluster_free(cassandra_session->cluster);
     }
-    cassandra_session->session = NULL;
-    cassandra_session->connect_future = NULL;
-    cassandra_session->cluster = NULL;
+    xfree(cassandra_session);
 }
 
 static size_t session_memsize(const void *ptr)

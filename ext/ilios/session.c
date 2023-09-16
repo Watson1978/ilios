@@ -58,6 +58,7 @@ static VALUE session_prepare(VALUE self, VALUE query)
 
     cassandra_statement->prepared = cass_future_get_prepared(prepare_future);
     cassandra_statement->statement = cass_prepared_bind(cassandra_statement->prepared);
+    cassandra_statement->session_obj = self;
     cass_future_free(prepare_future);
 
     return cassandra_statement_obj;

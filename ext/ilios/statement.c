@@ -1,12 +1,13 @@
 #include "ilios.h"
 
+static void statement_mark(void *ptr);
 static void statement_destroy(void *ptr);
 static size_t statement_memsize(const void *ptr);
 
 const rb_data_type_t cassandra_statement_data_type = {
     "Ilios::Cassandra::Statement",
     {
-        NULL,
+        statement_mark,
         statement_destroy,
         statement_memsize,
 #ifdef HAVE_RB_GC_MARK_MOVABLE
@@ -71,6 +72,12 @@ static VALUE statement_bind(VALUE self, VALUE hash)
 
     rb_hash_foreach(hash, hash_cb, (VALUE)cassandra_statement);
     return self;
+}
+
+static void statement_mark(void *ptr)
+{
+    CassandraStatement *cassandra_statement = (CassandraStatement *)ptr;
+    rb_gc_mark(cassandra_statement->session_obj);
 }
 
 static void statement_destroy(void *ptr)

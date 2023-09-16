@@ -17,17 +17,34 @@ const rb_data_type_t cassandra_session_data_type = {
     RUBY_TYPED_FREE_IMMEDIATELY | RUBY_TYPED_FROZEN_SHAREABLE,
 };
 
+typedef struct {
+    CassSession* session;
+    const char *query;
+} nogvl_session_prepare_args;
+
+static void *nogvl_session_prepare(void *ptr)
+{
+    nogvl_session_prepare_args *args = (nogvl_session_prepare_args *)ptr;
+    CassFuture *prepare_future;
+
+    prepare_future = cass_session_prepare(args->session, args->query);
+    cass_future_wait(prepare_future);
+    return (void *)prepare_future;
+}
+
 static VALUE session_prepare(VALUE self, VALUE query)
 {
     CassandraSession *cassandra_session;
     CassandraStatement *cassandra_statement;
     CassFuture *prepare_future;
     VALUE cassandra_statement_obj;
+    nogvl_session_prepare_args args;
 
     TypedData_Get_Struct(self, CassandraSession, &cassandra_session_data_type, cassandra_session);
 
-    prepare_future = cass_session_prepare(cassandra_session->session, StringValueCStr(query));
-    cass_future_wait(prepare_future);
+    args.session = cassandra_session->session;
+    args.query = StringValueCStr(query);
+    prepare_future = (CassFuture *)rb_thread_call_without_gvl(nogvl_session_prepare, &args, RUBY_UBF_PROCESS, 0);
 
     if (cass_future_error_code(prepare_future) != CASS_OK) {
         char error[4096] = { 0 };

@@ -36,7 +36,6 @@ void Init_ilios(void)
 
     id_cvar_config = rb_intern("@@config");
     id_shuffle = rb_intern("shuffle");
-    id_to_f = rb_intern("to_f");
     sym_keyspace = ID2SYM(rb_intern("keyspace"));
     sym_hosts = ID2SYM(rb_intern("hosts"));
     sym_timeout_ms = ID2SYM(rb_intern("timeout_ms"));

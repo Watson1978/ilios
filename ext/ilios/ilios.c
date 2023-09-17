@@ -10,7 +10,6 @@ VALUE eExecutionError;
 
 VALUE id_cvar_config;
 VALUE id_shuffle;
-VALUE id_to_f;
 VALUE sym_keyspace;
 VALUE sym_hosts;
 VALUE sym_timeout_ms;

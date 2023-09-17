@@ -12,6 +12,7 @@ static VALUE cassandra_connect(VALUE self)
     cassandra_session_obj = TypedData_Make_Struct(cSession, CassandraSession, &cassandra_session_data_type, cassandra_session);
 
     cassandra_session->cluster = cass_cluster_new();
+    cass_cluster_set_protocol_version(cassandra_session->cluster, CASS_PROTOCOL_VERSION_V4);
 
     config = rb_cvar_get(self, id_cvar_config);
     cass_cluster_set_request_timeout(cassandra_session->cluster, NUM2UINT(rb_hash_aref(config, sym_timeout_ms)));

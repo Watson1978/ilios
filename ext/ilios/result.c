@@ -37,11 +37,19 @@ VALUE result_each(VALUE self)
             const CassValueType type = cass_value_type(value);
 
             switch (type) {
-            case CASS_VALUE_TYPE_BIGINT:
+            case CASS_VALUE_TYPE_TINY_INT:
                 {
-                    cass_int64_t output;
-                    cass_value_get_int64(value, &output);
-                    rb_ary_push(row_array, LL2NUM(output));
+                    cass_int8_t output;
+                    cass_value_get_int8(value, &output);
+                    rb_ary_push(row_array, INT2NUM(output));
+                }
+                break;
+
+            case CASS_VALUE_TYPE_SMALL_INT:
+                {
+                    cass_int16_t output;
+                    cass_value_get_int16(value, &output);
+                    rb_ary_push(row_array, INT2NUM(output));
                 }
                 break;
 
@@ -50,6 +58,14 @@ VALUE result_each(VALUE self)
                     cass_int32_t output;
                     cass_value_get_int32(value, &output);
                     rb_ary_push(row_array, INT2NUM(output));
+                }
+                break;
+
+            case CASS_VALUE_TYPE_BIGINT:
+                {
+                    cass_int64_t output;
+                    cass_value_get_int64(value, &output);
+                    rb_ary_push(row_array, LL2NUM(output));
                 }
                 break;
 
@@ -62,6 +78,15 @@ VALUE result_each(VALUE self)
                     cass_value_get_string(value, &s, &s_length);
                     rb_ary_push(row_array, rb_str_new(s, s_length));
                 }
+                break;
+
+            case CASS_VALUE_TYPE_TIMESTAMP:
+                {
+                    cass_int64_t output;
+                    cass_value_get_int64(value, &output);
+                    rb_ary_push(row_array, rb_time_new(output / 1000, output % 1000 * 1000));
+                }
+                break;
             }
         }
 

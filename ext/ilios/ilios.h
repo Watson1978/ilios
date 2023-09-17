@@ -40,6 +40,7 @@ extern VALUE eExecutionError;
 
 extern VALUE id_cvar_config;
 extern VALUE id_shuffle;
+extern VALUE id_to_f;
 extern VALUE sym_keyspace;
 extern VALUE sym_hosts;
 extern VALUE sym_timeout_ms;

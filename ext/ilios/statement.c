@@ -59,6 +59,14 @@ static int hash_cb(VALUE key, VALUE value, VALUE statement)
         break;
 
     default:
+        {
+            VALUE class = rb_obj_class(value);
+            if (class == rb_cTime) {
+                VALUE float_time = rb_funcall(value, id_to_f, 0);
+                cass_statement_bind_int64_by_name(cassandra_statement->statement, name, (cass_int64_t)(NUM2DBL(float_time) * 1000));
+                break;
+            }
+        }
         rb_raise(rb_eTypeError, "Unsupported %"PRIsVALUE" type: %s=%"PRIsVALUE"", rb_obj_class(value), name, value);
     }
 

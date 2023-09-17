@@ -35,9 +35,11 @@ static int hash_cb(VALUE key, VALUE value, VALUE statement)
 
     case T_TRUE:
         cass_statement_bind_bool_by_name(cassandra_statement->statement, name, cass_true);
+        break;
 
     case T_FALSE:
         cass_statement_bind_bool_by_name(cassandra_statement->statement, name, cass_false);
+        break;
 
     case T_FIXNUM:
         cass_statement_bind_int64_by_name(cassandra_statement->statement, name, NUM2LONG(value));

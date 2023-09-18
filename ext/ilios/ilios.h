@@ -52,4 +52,8 @@ extern void Init_session(void);
 extern void Init_statement(void);
 extern void Init_result(void);
 
+extern void nogvl_future_wait(CassFuture *future);
+extern CassFuture *nogvl_session_prepare(CassSession* session, VALUE query);
+extern CassFuture *nogvl_session_execute(CassSession* session, CassStatement* statement);
+
 #endif // ILIOS_H

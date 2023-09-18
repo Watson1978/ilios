@@ -17,34 +17,17 @@ const rb_data_type_t cassandra_session_data_type = {
     RUBY_TYPED_FREE_IMMEDIATELY | RUBY_TYPED_WB_PROTECTED | RUBY_TYPED_FROZEN_SHAREABLE,
 };
 
-typedef struct {
-    CassSession* session;
-    const char *query;
-} nogvl_session_prepare_args;
-
-static void *nogvl_session_prepare(void *ptr)
-{
-    nogvl_session_prepare_args *args = (nogvl_session_prepare_args *)ptr;
-    CassFuture *prepare_future;
-
-    prepare_future = cass_session_prepare(args->session, args->query);
-    cass_future_wait(prepare_future);
-    return (void *)prepare_future;
-}
-
 static VALUE session_prepare(VALUE self, VALUE query)
 {
     CassandraSession *cassandra_session;
     CassandraStatement *cassandra_statement;
     CassFuture *prepare_future;
     VALUE cassandra_statement_obj;
-    nogvl_session_prepare_args args;
 
     TypedData_Get_Struct(self, CassandraSession, &cassandra_session_data_type, cassandra_session);
 
-    args.session = cassandra_session->session;
-    args.query = StringValueCStr(query);
-    prepare_future = (CassFuture *)rb_thread_call_without_gvl(nogvl_session_prepare, &args, RUBY_UBF_PROCESS, 0);
+    prepare_future = nogvl_session_prepare(cassandra_session->session, query);
+    nogvl_future_wait(prepare_future);
 
     if (cass_future_error_code(prepare_future) != CASS_OK) {
         char error[4096] = { 0 };
@@ -64,21 +47,6 @@ static VALUE session_prepare(VALUE self, VALUE query)
     return cassandra_statement_obj;
 }
 
-typedef struct {
-    CassSession* session;
-    CassStatement* statement;
-} nogvl_session_execute_args;
-
-static void *nogvl_session_execute(void *ptr)
-{
-    nogvl_session_execute_args *args = (nogvl_session_execute_args *)ptr;
-    CassFuture *result_future;
-
-    result_future = cass_session_execute(args->session, args->statement);
-    cass_future_wait(result_future);
-    return (void *)result_future;
-}
-
 static VALUE session_execute(VALUE self, VALUE statement)
 {
     CassandraSession *cassandra_session;
@@ -86,14 +54,12 @@ static VALUE session_execute(VALUE self, VALUE statement)
     CassandraResult *cassandra_result;
     CassFuture *result_future;
     VALUE cassandra_result_obj;
-    nogvl_session_execute_args args;
 
     TypedData_Get_Struct(self, CassandraSession, &cassandra_session_data_type, cassandra_session);
     TypedData_Get_Struct(statement, CassandraStatement, &cassandra_statement_data_type, cassandra_statement);
 
-    args.session = cassandra_session->session;
-    args.statement = cassandra_statement->statement;
-    result_future = (CassFuture *)rb_thread_call_without_gvl(nogvl_session_execute, &args, RUBY_UBF_PROCESS, 0);
+    result_future = nogvl_session_execute(cassandra_session->session, cassandra_statement->statement);
+    nogvl_future_wait(result_future);
 
     if (cass_future_error_code(result_future) != CASS_OK) {
         char error[4096] = { 0 };

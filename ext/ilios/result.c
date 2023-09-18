@@ -36,6 +36,11 @@ VALUE result_each(VALUE self)
             const CassValue *value = cass_row_get_column(row, i);
             const CassValueType type = cass_value_type(value);
 
+            if (cass_value_is_null(value)) {
+                rb_ary_push(row_array, Qnil);
+                continue;
+            }
+
             switch (type) {
             case CASS_VALUE_TYPE_TINY_INT:
                 {

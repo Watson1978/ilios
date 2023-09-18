@@ -37,7 +37,6 @@ CassFuture *nogvl_session_prepare(CassSession* session, VALUE query)
     return (CassFuture *)rb_thread_call_without_gvl(nogvl_session_prepare_cb, &args, RUBY_UBF_PROCESS, 0);
 }
 
-
 static void *nogvl_session_execute_cb(void *ptr)
 {
     nogvl_session_execute_args *args = (nogvl_session_execute_args *)ptr;

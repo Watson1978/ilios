@@ -69,6 +69,30 @@ VALUE result_each(VALUE self)
                 }
                 break;
 
+            case CASS_VALUE_TYPE_FLOAT:
+                {
+                    cass_float_t output;
+                    cass_value_get_float(value, &output);
+                    rb_ary_push(row_array, DBL2NUM(output));
+                }
+                break;
+
+            case CASS_VALUE_TYPE_DOUBLE:
+                {
+                    cass_double_t output;
+                    cass_value_get_double(value, &output);
+                    rb_ary_push(row_array, DBL2NUM(output));
+                }
+                break;
+
+            case CASS_VALUE_TYPE_BOOLEAN:
+                {
+                    cass_bool_t output;
+                    cass_value_get_bool(value, &output);
+                    rb_ary_push(row_array, output == cass_true ? Qtrue : Qfalse);
+                }
+                break;
+
             case CASS_VALUE_TYPE_TEXT:
             case CASS_VALUE_TYPE_ASCII:
             case CASS_VALUE_TYPE_VARCHAR:
@@ -87,6 +111,19 @@ VALUE result_each(VALUE self)
                     rb_ary_push(row_array, rb_time_new(output / 1000, output % 1000 * 1000));
                 }
                 break;
+
+            case CASS_VALUE_TYPE_UUID:
+                {
+                    CassUuid output;
+                    char uuid[40];
+                    cass_value_get_uuid(value, &output);
+                    cass_uuid_string(output, uuid);
+                    rb_ary_push(row_array, rb_str_new2(uuid));
+                }
+                break;
+
+            default:
+                rb_warn("Unsupported type: %d", type);
             }
         }
 

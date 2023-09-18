@@ -48,6 +48,8 @@ VALUE result_each(VALUE self)
 
     RETURN_ENUMERATOR(self, 0, 0);
 
+    result_await(self);
+
     TypedData_Get_Struct(self, CassandraResult, &cassandra_result_data_type, cassandra_result);
 
     iterator = cass_iterator_from_result(cassandra_result->result);

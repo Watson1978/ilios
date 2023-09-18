@@ -129,6 +129,7 @@ VALUE result_each(VALUE self)
 
             default:
                 rb_warn("Unsupported type: %d", type);
+                rb_ary_push(row_array, sym_unsupported_column_type);
             }
         }
 

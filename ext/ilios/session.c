@@ -22,6 +22,7 @@ static VALUE session_prepare(VALUE self, VALUE query)
     CassandraSession *cassandra_session;
     CassandraStatement *cassandra_statement;
     CassFuture *prepare_future;
+    const CassPrepared* prepared;
     VALUE cassandra_statement_obj;
 
     TypedData_Get_Struct(self, CassandraSession, &cassandra_session_data_type, cassandra_session);
@@ -39,10 +40,11 @@ static VALUE session_prepare(VALUE self, VALUE query)
 
     cassandra_statement_obj = TypedData_Make_Struct(cStatement, CassandraStatement, &cassandra_statement_data_type, cassandra_statement);
 
-    cassandra_statement->prepared = cass_future_get_prepared(prepare_future);
-    cassandra_statement->statement = cass_prepared_bind(cassandra_statement->prepared);
+    prepared = cass_future_get_prepared(prepare_future);
+    cassandra_statement->statement = cass_prepared_bind(prepared);
     cassandra_statement->session_obj = self;
     cass_future_free(prepare_future);
+    cass_prepared_free(prepared);
 
     return cassandra_statement_obj;
 }

@@ -122,9 +122,6 @@ static void statement_destroy(void *ptr)
 {
     CassandraStatement *cassandra_statement = (CassandraStatement *)ptr;
 
-    if (cassandra_statement->prepared) {
-        cass_prepared_free(cassandra_statement->prepared);
-    }
     if (cassandra_statement->statement) {
         cass_statement_free(cassandra_statement->statement);
     }

@@ -47,7 +47,7 @@ static VALUE session_prepare(VALUE self, VALUE query)
     return cassandra_statement_obj;
 }
 
-static VALUE session_execute(VALUE self, VALUE statement)
+static VALUE session_execute_async(VALUE self, VALUE statement)
 {
     CassandraSession *cassandra_session;
     CassandraStatement *cassandra_statement;
@@ -59,20 +59,17 @@ static VALUE session_execute(VALUE self, VALUE statement)
     TypedData_Get_Struct(statement, CassandraStatement, &cassandra_statement_data_type, cassandra_statement);
 
     result_future = nogvl_session_execute(cassandra_session->session, cassandra_statement->statement);
-    nogvl_future_wait(result_future);
-
-    if (cass_future_error_code(result_future) != CASS_OK) {
-        char error[4096] = { 0 };
-
-        strncpy(error, cass_error_desc(cass_future_error_code(result_future)), sizeof(error));
-        cass_future_free(result_future);
-        rb_raise(eExecutionError, "Unable to execute: %s", error);
-    }
 
     cassandra_result_obj = TypedData_Make_Struct(cResult, CassandraResult, &cassandra_result_data_type, cassandra_result);
-    cassandra_result->result = cass_future_get_result(result_future);
     cassandra_result->future = result_future;
 
+    return cassandra_result_obj;
+}
+
+static VALUE session_execute(VALUE self, VALUE statement)
+{
+    VALUE cassandra_result_obj = session_execute_async(self, statement);
+    result_await(cassandra_result_obj);
     return cassandra_result_obj;
 }
 
@@ -105,5 +102,6 @@ void Init_session(void)
     rb_undef_alloc_func(cSession);
 
     rb_define_method(cSession, "prepare", session_prepare, 1);
+    rb_define_method(cSession, "execute_async", session_execute_async, 1);
     rb_define_method(cSession, "execute", session_execute, 1);
 }

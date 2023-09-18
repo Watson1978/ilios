@@ -17,6 +17,29 @@ const rb_data_type_t cassandra_result_data_type = {
     RUBY_TYPED_FREE_IMMEDIATELY | RUBY_TYPED_WB_PROTECTED | RUBY_TYPED_FROZEN_SHAREABLE,
 };
 
+VALUE result_await(VALUE self)
+{
+    CassandraResult *cassandra_result;
+
+    TypedData_Get_Struct(self, CassandraResult, &cassandra_result_data_type, cassandra_result);
+
+    nogvl_future_wait(cassandra_result->future);
+
+    if (cass_future_error_code(cassandra_result->future) != CASS_OK) {
+        char error[4096] = { 0 };
+
+        strncpy(error, cass_error_desc(cass_future_error_code(cassandra_result->future)), sizeof(error));
+        cass_future_free(cassandra_result->future);
+        rb_raise(eExecutionError, "Unable to wait executing: %s", error);
+    }
+
+    if (cassandra_result->result == NULL) {
+        cassandra_result->result = cass_future_get_result(cassandra_result->future);
+    }
+
+    return self;
+}
+
 VALUE result_each(VALUE self)
 {
     CassandraResult *cassandra_result;
@@ -164,5 +187,6 @@ void Init_result(void)
 
     rb_include_module(cResult, rb_mEnumerable);
 
+    rb_define_method(cResult, "await", result_await, 0);
     rb_define_method(cResult, "each", result_each, 0);
 }

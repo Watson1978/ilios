@@ -56,4 +56,6 @@ extern void nogvl_future_wait(CassFuture *future);
 extern CassFuture *nogvl_session_prepare(CassSession* session, VALUE query);
 extern CassFuture *nogvl_session_execute(CassSession* session, CassStatement* statement);
 
+extern VALUE result_await(VALUE self);
+
 #endif // ILIOS_H

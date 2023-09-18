@@ -11,3 +11,5 @@
 /ext/ilios/*.so
 /ext/ilios/*.o
 /ext/ilios/Makefile
+
+Gemfile.lock

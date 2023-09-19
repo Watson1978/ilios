@@ -76,14 +76,9 @@ static VALUE statement_bind_bigint(VALUE self, VALUE idx, VALUE value)
 {
     CassandraStatement *cassandra_statement;
     CassError result;
-    long v = NUM2LONG(value);
-
-    if (v < INT64_MIN || v > INT64_MAX) {
-        rb_raise(eStatementError, "Invalid value: %ld", v);
-    }
 
     TypedData_Get_Struct(self, CassandraStatement, &cassandra_statement_data_type, cassandra_statement);
-    result = cass_statement_bind_int64(cassandra_statement->statement, NUM2LONG(idx), v);
+    result = cass_statement_bind_int64(cassandra_statement->statement, NUM2LONG(idx), NUM2LONG(value));
     if (result != CASS_OK) {
         rb_raise(eStatementError, "Failed to bind value: %s", cass_error_desc(result));
     }
@@ -96,7 +91,7 @@ static VALUE statement_bind_float(VALUE self, VALUE idx, VALUE value)
     CassError result;
     double v = NUM2DBL(value);
 
-    if (!isnan(v) && !isinf(v) && (v < FLT_MIN || v > FLT_MAX)) {
+    if (!isnan(v) && !isinf(v) && (v < -FLT_MAX || v > FLT_MAX)) {
         rb_raise(eStatementError, "Invalid value: %f", v);
     }
 

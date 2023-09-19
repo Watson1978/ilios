@@ -1,6 +1,7 @@
 #ifndef ILIOS_H
 #define ILIOS_H
 
+#include <stdint.h>
 #include <cassandra.h>
 #include "ruby.h"
 #include "ruby/thread.h"
@@ -36,6 +37,7 @@ extern VALUE cStatement;
 extern VALUE cResult;
 extern VALUE eConnectError;
 extern VALUE eExecutionError;
+extern VALUE eStatementError;
 
 extern VALUE id_cvar_config;
 extern VALUE id_shuffle;

@@ -7,6 +7,7 @@ VALUE cStatement;
 VALUE cResult;
 VALUE eConnectError;
 VALUE eExecutionError;
+VALUE eStatementError;
 
 VALUE id_cvar_config;
 VALUE id_shuffle;
@@ -33,6 +34,7 @@ void Init_ilios(void)
     cResult = rb_define_class_under(mCassandra, "Result", rb_cObject);
     eConnectError = rb_define_class_under(mCassandra, "ConnectError", rb_eStandardError);
     eExecutionError = rb_define_class_under(mCassandra, "ExecutionError", rb_eStandardError);
+    eStatementError = rb_define_class_under(mCassandra, "StatementError", rb_eStandardError);
 
     id_cvar_config = rb_intern("@@config");
     id_shuffle = rb_intern("shuffle");

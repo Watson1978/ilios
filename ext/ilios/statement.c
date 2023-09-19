@@ -94,6 +94,11 @@ static VALUE statement_bind_float(VALUE self, VALUE idx, VALUE value)
 {
     CassandraStatement *cassandra_statement;
     CassError result;
+    double v = NUM2DBL(value);
+
+    if (!isnan(v) && !isinf(v) && (v < FLT_MIN || v > FLT_MAX)) {
+        rb_raise(eStatementError, "Invalid value: %f", v);
+    }
 
     TypedData_Get_Struct(self, CassandraStatement, &cassandra_statement_data_type, cassandra_statement);
     result = cass_statement_bind_float(cassandra_statement->statement, NUM2LONG(idx), NUM2DBL(value));

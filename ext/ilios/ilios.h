@@ -2,6 +2,7 @@
 #define ILIOS_H
 
 #include <stdint.h>
+#include <float.h>
 #include <cassandra.h>
 #include "ruby.h"
 #include "ruby/thread.h"

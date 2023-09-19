@@ -148,6 +148,10 @@ static VALUE statement_bind_timestamp(VALUE self, VALUE idx, VALUE value)
     CassandraStatement *cassandra_statement;
     CassError result;
 
+    if (rb_obj_class(value) != rb_cTime) {
+        value = rb_funcall(value, id_to_time, 0);
+    }
+
     TypedData_Get_Struct(self, CassandraStatement, &cassandra_statement_data_type, cassandra_statement);
     result = cass_statement_bind_int64(cassandra_statement->statement, NUM2LONG(idx), (cass_int64_t)(NUM2DBL(rb_Float(value)) * 1000));
     if (result != CASS_OK) {

@@ -41,6 +41,7 @@ extern VALUE eStatementError;
 
 extern VALUE id_cvar_config;
 extern VALUE id_shuffle;
+extern VALUE id_to_time;
 extern VALUE sym_unsupported_column_type;
 extern VALUE sym_keyspace;
 extern VALUE sym_hosts;

@@ -18,6 +18,19 @@ const rb_data_type_t cassandra_statement_data_type = {
     RUBY_TYPED_FREE_IMMEDIATELY | RUBY_TYPED_WB_PROTECTED | RUBY_TYPED_FROZEN_SHAREABLE,
 };
 
+static VALUE statement_bind_null(VALUE self, VALUE idx)
+{
+    CassandraStatement *cassandra_statement;
+    CassError result;
+
+    TypedData_Get_Struct(self, CassandraStatement, &cassandra_statement_data_type, cassandra_statement);
+    result = cass_statement_bind_null(cassandra_statement->statement, NUM2LONG(idx));
+    if (result != CASS_OK) {
+        rb_raise(eStatementError, "Failed to bind value: %s", cass_error_desc(result));
+    }
+    return self;
+}
+
 static VALUE statement_bind_tinyint(VALUE self, VALUE idx, VALUE value)
 {
     CassandraStatement *cassandra_statement;
@@ -201,6 +214,7 @@ void Init_statement(void)
 {
     rb_undef_alloc_func(cStatement);
 
+    rb_define_method(cStatement, "bind_null", statement_bind_null, 1);
     rb_define_method(cStatement, "bind_tinyint", statement_bind_tinyint, 2);
     rb_define_method(cStatement, "bind_smallint", statement_bind_smallint, 2);
     rb_define_method(cStatement, "bind_int", statement_bind_int, 2);

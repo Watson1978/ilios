@@ -21,7 +21,7 @@ VALUE result_await(VALUE self)
 {
     CassandraResult *cassandra_result;
 
-    TypedData_Get_Struct(self, CassandraResult, &cassandra_result_data_type, cassandra_result);
+    GET_RESULT(self, cassandra_result);
 
     nogvl_future_wait(cassandra_result->future);
 
@@ -50,7 +50,7 @@ VALUE result_each(VALUE self)
 
     result_await(self);
 
-    TypedData_Get_Struct(self, CassandraResult, &cassandra_result_data_type, cassandra_result);
+    GET_RESULT(self, cassandra_result);
 
     iterator = cass_iterator_from_result(cassandra_result->result);
     column_count = cass_result_column_count(cassandra_result->result);

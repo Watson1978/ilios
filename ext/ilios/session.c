@@ -25,7 +25,7 @@ static VALUE session_prepare(VALUE self, VALUE query)
     const CassPrepared* prepared;
     VALUE cassandra_statement_obj;
 
-    TypedData_Get_Struct(self, CassandraSession, &cassandra_session_data_type, cassandra_session);
+    GET_SESSION(self, cassandra_session);
 
     prepare_future = nogvl_session_prepare(cassandra_session->session, query);
     nogvl_future_wait(prepare_future);
@@ -38,7 +38,7 @@ static VALUE session_prepare(VALUE self, VALUE query)
         rb_raise(eExecutionError, "Unable to prepare query: %s", error);
     }
 
-    cassandra_statement_obj = TypedData_Make_Struct(cStatement, CassandraStatement, &cassandra_statement_data_type, cassandra_statement);
+    cassandra_statement_obj = CREATE_STATEMENT(cassandra_statement);
 
     prepared = cass_future_get_prepared(prepare_future);
     cassandra_statement->statement = cass_prepared_bind(prepared);
@@ -57,12 +57,12 @@ static VALUE session_execute_async(VALUE self, VALUE statement)
     CassFuture *result_future;
     VALUE cassandra_result_obj;
 
-    TypedData_Get_Struct(self, CassandraSession, &cassandra_session_data_type, cassandra_session);
-    TypedData_Get_Struct(statement, CassandraStatement, &cassandra_statement_data_type, cassandra_statement);
+    GET_SESSION(self, cassandra_session);
+    GET_STATEMENT(statement, cassandra_statement);
 
     result_future = nogvl_session_execute(cassandra_session->session, cassandra_statement->statement);
 
-    cassandra_result_obj = TypedData_Make_Struct(cResult, CassandraResult, &cassandra_result_data_type, cassandra_result);
+    cassandra_result_obj = CREATE_RESULT(cassandra_result);
     cassandra_result->future = result_future;
 
     return cassandra_result_obj;

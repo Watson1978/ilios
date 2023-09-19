@@ -23,7 +23,7 @@ static VALUE statement_bind_null(VALUE self, VALUE idx)
     CassandraStatement *cassandra_statement;
     CassError result;
 
-    TypedData_Get_Struct(self, CassandraStatement, &cassandra_statement_data_type, cassandra_statement);
+    GET_STATEMENT(self, cassandra_statement);
     result = cass_statement_bind_null(cassandra_statement->statement, NUM2LONG(idx));
     if (result != CASS_OK) {
         rb_raise(eStatementError, "Failed to bind value: %s", cass_error_desc(result));
@@ -41,7 +41,7 @@ static VALUE statement_bind_tinyint(VALUE self, VALUE idx, VALUE value)
         rb_raise(eStatementError, "Invalid value: %d", v);
     }
 
-    TypedData_Get_Struct(self, CassandraStatement, &cassandra_statement_data_type, cassandra_statement);
+    GET_STATEMENT(self, cassandra_statement);
     result = cass_statement_bind_int8(cassandra_statement->statement, NUM2LONG(idx), v);
     if (result != CASS_OK) {
         rb_raise(eStatementError, "Failed to bind value: %s", cass_error_desc(result));
@@ -59,7 +59,7 @@ static VALUE statement_bind_smallint(VALUE self, VALUE idx, VALUE value)
         rb_raise(eStatementError, "Invalid value: %d", v);
     }
 
-    TypedData_Get_Struct(self, CassandraStatement, &cassandra_statement_data_type, cassandra_statement);
+    GET_STATEMENT(self, cassandra_statement);
     result = cass_statement_bind_int16(cassandra_statement->statement, NUM2LONG(idx), v);
     if (result != CASS_OK) {
         rb_raise(eStatementError, "Failed to bind value: %s", cass_error_desc(result));
@@ -77,7 +77,7 @@ static VALUE statement_bind_int(VALUE self, VALUE idx, VALUE value)
         rb_raise(eStatementError, "Invalid value: %d", v);
     }
 
-    TypedData_Get_Struct(self, CassandraStatement, &cassandra_statement_data_type, cassandra_statement);
+    GET_STATEMENT(self, cassandra_statement);
     result = cass_statement_bind_int32(cassandra_statement->statement, NUM2LONG(idx), v);
     if (result != CASS_OK) {
         rb_raise(eStatementError, "Failed to bind value: %s", cass_error_desc(result));
@@ -90,7 +90,7 @@ static VALUE statement_bind_bigint(VALUE self, VALUE idx, VALUE value)
     CassandraStatement *cassandra_statement;
     CassError result;
 
-    TypedData_Get_Struct(self, CassandraStatement, &cassandra_statement_data_type, cassandra_statement);
+    GET_STATEMENT(self, cassandra_statement);
     result = cass_statement_bind_int64(cassandra_statement->statement, NUM2LONG(idx), NUM2LONG(value));
     if (result != CASS_OK) {
         rb_raise(eStatementError, "Failed to bind value: %s", cass_error_desc(result));
@@ -108,7 +108,7 @@ static VALUE statement_bind_float(VALUE self, VALUE idx, VALUE value)
         rb_raise(eStatementError, "Invalid value: %f", v);
     }
 
-    TypedData_Get_Struct(self, CassandraStatement, &cassandra_statement_data_type, cassandra_statement);
+    GET_STATEMENT(self, cassandra_statement);
     result = cass_statement_bind_float(cassandra_statement->statement, NUM2LONG(idx), NUM2DBL(value));
     if (result != CASS_OK) {
         rb_raise(eStatementError, "Failed to bind value: %s", cass_error_desc(result));
@@ -121,7 +121,7 @@ static VALUE statement_bind_double(VALUE self, VALUE idx, VALUE value)
     CassandraStatement *cassandra_statement;
     CassError result;
 
-    TypedData_Get_Struct(self, CassandraStatement, &cassandra_statement_data_type, cassandra_statement);
+    GET_STATEMENT(self, cassandra_statement);
     result = cass_statement_bind_double(cassandra_statement->statement, NUM2LONG(idx), NUM2DBL(value));
     if (result != CASS_OK) {
         rb_raise(eStatementError, "Failed to bind value: %s", cass_error_desc(result));
@@ -135,7 +135,7 @@ static VALUE statement_bind_boolean(VALUE self, VALUE idx, VALUE value)
     cass_bool_t v = RTEST(value) ? cass_true : cass_false;
     CassError result;
 
-    TypedData_Get_Struct(self, CassandraStatement, &cassandra_statement_data_type, cassandra_statement);
+    GET_STATEMENT(self, cassandra_statement);
     result = cass_statement_bind_bool(cassandra_statement->statement, NUM2LONG(idx), v);
     if (result != CASS_OK) {
         rb_raise(eStatementError, "Failed to bind value: %s", cass_error_desc(result));
@@ -148,7 +148,7 @@ static VALUE statement_bind_text(VALUE self, VALUE idx, VALUE value)
     CassandraStatement *cassandra_statement;
     CassError result;
 
-    TypedData_Get_Struct(self, CassandraStatement, &cassandra_statement_data_type, cassandra_statement);
+    GET_STATEMENT(self, cassandra_statement);
     result = cass_statement_bind_string(cassandra_statement->statement, NUM2LONG(idx), StringValueCStr(value));
     if (result != CASS_OK) {
         rb_raise(eStatementError, "Failed to bind value: %s", cass_error_desc(result));
@@ -165,7 +165,7 @@ static VALUE statement_bind_timestamp(VALUE self, VALUE idx, VALUE value)
         value = rb_funcall(value, id_to_time, 0);
     }
 
-    TypedData_Get_Struct(self, CassandraStatement, &cassandra_statement_data_type, cassandra_statement);
+    GET_STATEMENT(self, cassandra_statement);
     result = cass_statement_bind_int64(cassandra_statement->statement, NUM2LONG(idx), (cass_int64_t)(NUM2DBL(rb_Float(value)) * 1000));
     if (result != CASS_OK) {
         rb_raise(eStatementError, "Failed to bind value: %s", cass_error_desc(result));
@@ -180,7 +180,7 @@ static VALUE statement_bind_uuid(VALUE self, VALUE idx, VALUE value)
     CassError result;
     const char *uuid_string = StringValueCStr(value);
 
-    TypedData_Get_Struct(self, CassandraStatement, &cassandra_statement_data_type, cassandra_statement);
+    GET_STATEMENT(self, cassandra_statement);
     cass_uuid_from_string(uuid_string, &uuid);
     result = cass_statement_bind_uuid(cassandra_statement->statement, NUM2LONG(idx), uuid);
     if (result != CASS_OK) {

@@ -10,10 +10,11 @@
 /ext/ilios/*.bundle
 /ext/ilios/*.so
 /ext/ilios/*.o
+/ext/ilios/mkmf.log
 /ext/ilios/Makefile
-/ext/cpp-driver
-/ext/libuv
-/ext/ports
-/ext/tmp
+/ext/ilios/cpp-driver
+/ext/ilios/libuv
+/ext/ilios/ports
+/ext/ilios/tmp
 
 Gemfile.lock

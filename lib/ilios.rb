@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "ilios/version"
+require "ilios/version"
 require 'ilios.so'
 
 module Ilios

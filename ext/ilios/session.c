@@ -33,7 +33,7 @@ static VALUE session_prepare(VALUE self, VALUE query)
     if (cass_future_error_code(prepare_future) != CASS_OK) {
         char error[4096] = { 0 };
 
-        strncpy(error, cass_error_desc(cass_future_error_code(prepare_future)), sizeof(error));
+        strncpy(error, cass_error_desc(cass_future_error_code(prepare_future)), sizeof(error) - 1);
         cass_future_free(prepare_future);
         rb_raise(eExecutionError, "Unable to prepare query: %s", error);
     }

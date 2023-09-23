@@ -28,7 +28,7 @@ VALUE result_await(VALUE self)
     if (cass_future_error_code(cassandra_result->future) != CASS_OK) {
         char error[4096] = { 0 };
 
-        strncpy(error, cass_error_desc(cass_future_error_code(cassandra_result->future)), sizeof(error));
+        strncpy(error, cass_error_desc(cass_future_error_code(cassandra_result->future)), sizeof(error) - 1);
         cass_future_free(cassandra_result->future);
         rb_raise(eExecutionError, "Unable to wait executing: %s", error);
     }

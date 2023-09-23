@@ -42,7 +42,7 @@ static VALUE cassandra_connect(VALUE self)
             return cassandra_session_obj;
         }
 
-        strncpy(last_error, cass_error_desc(cass_future_error_code(cassandra_session->connect_future)), sizeof(last_error));
+        strncpy(last_error, cass_error_desc(cass_future_error_code(cassandra_session->connect_future)), sizeof(last_error) - 1);
         cass_future_free(cassandra_session->connect_future);
         cass_session_free(cassandra_session->session);
         cassandra_session->connect_future = NULL;

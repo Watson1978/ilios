@@ -1,6 +1,6 @@
 require 'mkmf'
 
-libpath = `brew --prefix cassandra-cpp-driver`.chomp
+libpath = "../cpp-driver"
 
 $CPPFLAGS += " -I#{libpath}/include"
 $LDFLAGS += " -L#{libpath}/lib -lcassandra"

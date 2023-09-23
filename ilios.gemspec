@@ -28,7 +28,8 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.extensions = %w[ext/ilios/extconf.rb]
+  spec.extensions = %w[ext/Rakefile ext/ilios/extconf.rb]
 
-  spec.add_development_dependency 'rake-compiler', '~> 1.2', '>= 1.2.5'
+  spec.add_runtime_dependency 'mini_portile2', '~> 2.8'
+  spec.add_development_dependency 'rake-compiler', '~> 1.2'
 end

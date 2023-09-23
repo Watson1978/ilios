@@ -11,5 +11,9 @@
 /ext/ilios/*.so
 /ext/ilios/*.o
 /ext/ilios/Makefile
+/ext/cpp-driver
+/ext/libuv
+/ext/ports
+/ext/tmp
 
 Gemfile.lock

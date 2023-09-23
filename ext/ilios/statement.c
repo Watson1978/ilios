@@ -189,6 +189,15 @@ static VALUE statement_bind_uuid(VALUE self, VALUE idx, VALUE value)
     return self;
 }
 
+static VALUE statement_page_size(VALUE self, VALUE page_size)
+{
+    CassandraStatement *cassandra_statement;
+
+    GET_STATEMENT(self, cassandra_statement);
+    cass_statement_set_paging_size(cassandra_statement->statement, NUM2INT(page_size));
+    return self;
+}
+
 static void statement_mark(void *ptr)
 {
     CassandraStatement *cassandra_statement = (CassandraStatement *)ptr;
@@ -227,4 +236,6 @@ void Init_statement(void)
     rb_define_method(cStatement, "bind_varchar", statement_bind_text, 2);
     rb_define_method(cStatement, "bind_timestamp", statement_bind_timestamp, 2);
     rb_define_method(cStatement, "bind_uuid", statement_bind_uuid, 2);
+
+    rb_define_method(cStatement, "page_size=", statement_page_size, 1);
 }

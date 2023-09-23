@@ -3,11 +3,19 @@
 require File.expand_path('../../lib/ilios/version', __FILE__)
 require "mini_portile2"
 require "fileutils"
+require "mkmf"
 
 CASSANDRA_CPP_DRIVER_INSTALL_PATH = File.join(File.dirname(__FILE__), "cpp-driver")
 LIBUV_INSTALL_PATH = File.join(File.dirname(__FILE__), "libuv")
 
 task :default do
+  unless find_executable("cmake")
+    puts "--------------------------------------------------"
+    puts "Error: cmake is required to build this gem"
+    puts "--------------------------------------------------"
+    raise
+  end
+
   unless File.exist?(LIBUV_INSTALL_PATH)
     libuv_recipe = MiniPortileCMake.new("libuv", Ilios::LIBUV_VERSION, make_command: "make -j")
     libuv_recipe.files << {
@@ -31,6 +39,8 @@ task :default do
 
   FileUtils.rm_rf("ports")
   FileUtils.rm_rf("tmp")
+
+  puts "Install successful"
 end
 
 task :clean do

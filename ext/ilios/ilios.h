@@ -56,6 +56,7 @@ extern VALUE sym_hosts;
 extern VALUE sym_timeout_ms;
 extern VALUE sym_constant_delay_ms;
 extern VALUE sym_max_speculative_executions;
+extern VALUE sym_page_size;
 
 extern void Init_cassandra(void);
 extern void Init_session(void);

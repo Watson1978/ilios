@@ -11,6 +11,7 @@ module Ilios
       timeout_ms: 5_000,
       constant_delay_ms: 15_000,
       max_speculative_executions: 2,
+      page_size: 10000,
     }
 
     def self.config=(config)

@@ -18,6 +18,7 @@ VALUE sym_hosts;
 VALUE sym_timeout_ms;
 VALUE sym_constant_delay_ms;
 VALUE sym_max_speculative_executions;
+VALUE sym_page_size;
 
 void Init_ilios(void)
 {
@@ -46,7 +47,7 @@ void Init_ilios(void)
     sym_timeout_ms = ID2SYM(rb_intern("timeout_ms"));
     sym_constant_delay_ms = ID2SYM(rb_intern("constant_delay_ms"));
     sym_max_speculative_executions = ID2SYM(rb_intern("max_speculative_executions"));
-
+    sym_page_size = ID2SYM(rb_intern("page_size"));
 
     Init_cassandra();
     Init_session();

@@ -24,6 +24,7 @@ static VALUE session_prepare(VALUE self, VALUE query)
     CassFuture *prepare_future;
     const CassPrepared* prepared;
     VALUE cassandra_statement_obj;
+    VALUE config;
 
     GET_SESSION(self, cassandra_session);
 
@@ -46,6 +47,8 @@ static VALUE session_prepare(VALUE self, VALUE query)
     cass_future_free(prepare_future);
     cass_prepared_free(prepared);
 
+    config = rb_cvar_get(mCassandra, id_cvar_config);
+    cass_statement_set_paging_size(cassandra_statement->statement, NUM2INT(rb_hash_aref(config, sym_page_size)));
     return cassandra_statement_obj;
 }
 

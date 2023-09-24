@@ -38,6 +38,6 @@ FileUtils.rm_rf("ports")
 FileUtils.rm_rf("tmp")
 
 $CPPFLAGS += " -I#{CASSANDRA_CPP_DRIVER_INSTALL_PATH}/include"
-$LDFLAGS += " -L#{CASSANDRA_CPP_DRIVER_INSTALL_PATH}/lib -lcassandra"
+$LDFLAGS += " -L#{CASSANDRA_CPP_DRIVER_INSTALL_PATH}/lib -Wl,--rpath #{CASSANDRA_CPP_DRIVER_INSTALL_PATH}/lib -lcassandra"
 
 create_makefile('ilios')

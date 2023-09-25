@@ -1,12 +1,13 @@
 #include "ilios.h"
 
+static void result_mark(void *ptr);
 static void result_destroy(void *ptr);
 static size_t result_memsize(const void *ptr);
 
 const rb_data_type_t cassandra_result_data_type = {
     "Ilios::Cassandra::Result",
     {
-        NULL,
+        result_mark,
         result_destroy,
         result_memsize,
 #ifdef HAVE_RB_GC_MARK_MOVABLE
@@ -37,6 +38,35 @@ VALUE result_await(VALUE self)
         cassandra_result->result = cass_future_get_result(cassandra_result->future);
     }
 
+    return self;
+}
+
+VALUE result_next_page(VALUE self)
+{
+    CassandraResult *cassandra_result;
+    CassandraStatement *cassandra_statement;
+    CassandraSession *cassandra_session;
+    CassFuture *result_future;
+
+    GET_RESULT(self, cassandra_result);
+
+    if (cass_result_has_more_pages(cassandra_result->result) == cass_false) {
+        return Qnil;
+    }
+
+    GET_STATEMENT(cassandra_result->statement_obj, cassandra_statement);
+    GET_SESSION(cassandra_statement->session_obj, cassandra_session);
+
+    cass_statement_set_paging_state(cassandra_statement->statement, cassandra_result->result);
+
+    result_future = nogvl_session_execute(cassandra_session->session, cassandra_statement->statement);
+
+    cass_result_free(cassandra_result->result);
+    cass_future_free(cassandra_result->future);
+    cassandra_result->result = NULL;
+    cassandra_result->future = result_future;
+
+    result_await(self);
     return self;
 }
 
@@ -165,6 +195,12 @@ VALUE result_each(VALUE self)
     return self;
 }
 
+static void result_mark(void *ptr)
+{
+    CassandraResult *cassandra_result = (CassandraResult *)ptr;
+    rb_gc_mark(cassandra_result->statement_obj);
+}
+
 static void result_destroy(void *ptr)
 {
     CassandraResult *cassandra_result = (CassandraResult *)ptr;
@@ -190,5 +226,6 @@ void Init_result(void)
     rb_include_module(cResult, rb_mEnumerable);
 
     rb_define_method(cResult, "await", result_await, 0);
+    rb_define_method(cResult, "next_page", result_next_page, 0);
     rb_define_method(cResult, "each", result_each, 0);
 }

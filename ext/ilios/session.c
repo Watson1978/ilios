@@ -67,6 +67,7 @@ static VALUE session_execute_async(VALUE self, VALUE statement)
 
     cassandra_result_obj = CREATE_RESULT(cassandra_result);
     cassandra_result->future = result_future;
+    cassandra_result->statement_obj = statement;
 
     return cassandra_result_obj;
 }

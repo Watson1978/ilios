@@ -32,6 +32,7 @@ typedef struct
 {
     const CassResult *result;
     CassFuture *future;
+    VALUE statement_obj;
 } CassandraResult;
 
 extern const rb_data_type_t cassandra_session_data_type;

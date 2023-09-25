@@ -48,7 +48,7 @@ statement = Ilios::Cassandra.session.prepare(<<~CQL)
 CQL
 Ilios::Cassandra.session.execute(statement)
 
-# Insert a record
+# Insert the records
 statement = Ilios::Cassandra.session.prepare(<<~CQL)
   INSERT INTO ilios.example (
     id,
@@ -56,11 +56,14 @@ statement = Ilios::Cassandra.session.prepare(<<~CQL)
     created_at
   ) VALUES (?, ?, ?)
 CQL
-statement
-  .bind_bigint(0, Random.rand(1_000_000))
-  .bind_text(1, 'Hello World')
-  .bind_timestamp(2, Time.now)
-Ilios::Cassandra.session.execute(statement)
+
+100.times do |i|
+  statement
+    .bind_bigint(0, i)
+    .bind_text(1, 'Hello World')
+    .bind_timestamp(2, Time.now)
+  Ilios::Cassandra.session.execute(statement)
+end
 
 # Select the records
 statement = Ilios::Cassandra.session.prepare(<<~CQL)
@@ -69,6 +72,12 @@ CQL
 result = Ilios::Cassandra.session.execute(statement)
 result.each do |row|
   p row
+end
+
+while(result.next_page)
+  result.each do |row|
+    p row
+  end
 end
 ```
 

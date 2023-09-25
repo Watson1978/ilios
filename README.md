@@ -1,31 +1,77 @@
 # Ilios
 
-TODO: Delete this and the text below, and describe your gem
-
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/ilios`. To experiment with that code, run `bin/console` for an interactive prompt.
+Ilios that Cassandra driver written by C language for Ruby using [DataStax C/C++ Driver](https://github.com/datastax/cpp-driver).
 
 ## Installation
 
-TODO: Replace `UPDATE_WITH_YOUR_GEM_NAME_PRIOR_TO_RELEASE_TO_RUBYGEMS_ORG` with your gem name right after releasing it to RubyGems.org. Please do not do it earlier due to security reasons. Alternatively, replace this section with instructions to install your gem from git if you don't plan to release to RubyGems.org.
-
 Install the gem and add to the application's Gemfile by executing:
 
-    $ bundle add UPDATE_WITH_YOUR_GEM_NAME_PRIOR_TO_RELEASE_TO_RUBYGEMS_ORG
+```sh
+$ bundle add ilios
+```
 
 If bundler is not being used to manage dependencies, install the gem by executing:
 
-    $ gem install UPDATE_WITH_YOUR_GEM_NAME_PRIOR_TO_RELEASE_TO_RUBYGEMS_ORG
+```sh
+$ gem install ilios
+```
 
-## Usage
+## Example
 
-TODO: Write usage instructions here
+```ruby
+require 'ilios'
 
-## Development
+Ilios::Cassandra.config = {
+  keyspace: 'ilios',
+  hosts: ['127.0.0.1'],
+}
 
-After checking out the repo, run `bin/setup` to install dependencies. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+# Create the keyspace
+statement = Ilios::Cassandra.session.prepare(<<~CQL)
+  CREATE KEYSPACE IF NOT EXISTS ilios
+  WITH REPLICATION = {
+  'class' : 'SimpleStrategy',
+  'replication_factor' : 1
+  };
+CQL
+Ilios::Cassandra.session.execute(statement)
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+# Create the table
+statement = Ilios::Cassandra.session.prepare(<<~CQL)
+  CREATE TABLE IF NOT EXISTS ilios.example (
+    id bigint,
+    message text,
+    created_at timestamp,
+    PRIMARY KEY (id)
+  ) WITH compaction = { 'class' : 'LeveledCompactionStrategy' }
+  AND gc_grace_seconds = 691200;
+CQL
+Ilios::Cassandra.session.execute(statement)
+
+# Insert a record
+statement = Ilios::Cassandra.session.prepare(<<~CQL)
+  INSERT INTO ilios.example (
+    id,
+    message,
+    created_at
+  ) VALUES (?, ?, ?)
+CQL
+statement
+  .bind_bigint(0, Random.rand(1_000_000))
+  .bind_text(1, 'Hello World')
+  .bind_timestamp(2, Time.now)
+Ilios::Cassandra.session.execute(statement)
+
+# Select the records
+statement = Ilios::Cassandra.session.prepare(<<~CQL)
+  SELECT * FROM ilios.example
+CQL
+result = Ilios::Cassandra.session.execute(statement)
+result.each do |row|
+  p row
+end
+```
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/ilios.
+Bug reports and pull requests are welcome on GitHub at https://github.com/Watson1978/ilios.

@@ -25,6 +25,7 @@ typedef struct
 typedef struct
 {
     CassStatement* statement;
+    const CassPrepared* prepared;
     VALUE session_obj;
 } CassandraStatement;
 

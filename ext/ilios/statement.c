@@ -189,6 +189,140 @@ static VALUE statement_bind_uuid(VALUE self, VALUE idx, VALUE value)
     return self;
 }
 
+static int hash_cb(VALUE key, VALUE value, VALUE statement)
+{
+    CassandraStatement *cassandra_statement = (CassandraStatement *)statement;
+    const CassDataType* data_type;
+    CassValueType value_type;
+    CassError result;
+    const char *name;
+
+    if (SYMBOL_P(key)) {
+        key = rb_sym2str(key);
+    }
+    name = StringValueCStr(key);
+
+    data_type = cass_prepared_parameter_data_type_by_name(cassandra_statement->prepared, name);
+    if (data_type == NULL) {
+        rb_raise(eStatementError, "Invalid name %s wag given.", name);
+    }
+    value_type = cass_data_type_type(data_type);
+
+    if (NIL_P(value)) {
+        result = cass_statement_bind_null_by_name(cassandra_statement->statement, name);
+        goto result_check;
+    }
+
+    switch (value_type) {
+    case CASS_VALUE_TYPE_TINY_INT:
+        {
+            int v = NUM2INT(value);
+
+            if (v < INT8_MIN || v > INT8_MAX) {
+                rb_raise(eStatementError, "Invalid value: %d", v);
+            }
+            result = cass_statement_bind_int8_by_name(cassandra_statement->statement, name, v);
+        }
+        break;
+
+    case CASS_VALUE_TYPE_SMALL_INT:
+        {
+            int v = NUM2INT(value);
+
+            if (v < INT16_MIN || v > INT16_MAX) {
+                rb_raise(eStatementError, "Invalid value: %d", v);
+            }
+
+            result = cass_statement_bind_int16_by_name(cassandra_statement->statement, name, v);
+        }
+        break;
+
+    case CASS_VALUE_TYPE_INT:
+        {
+            int v = NUM2INT(value);
+
+            if (v < INT32_MIN || v > INT32_MAX) {
+                rb_raise(eStatementError, "Invalid value: %d", v);
+            }
+
+            result = cass_statement_bind_int32_by_name(cassandra_statement->statement, name, v);
+        }
+        break;
+
+    case CASS_VALUE_TYPE_BIGINT:
+        result = cass_statement_bind_int64_by_name(cassandra_statement->statement, name, NUM2LONG(value));
+        break;
+
+    case CASS_VALUE_TYPE_FLOAT:
+        {
+            double v = NUM2DBL(value);
+
+            if (!isnan(v) && !isinf(v) && (v < -FLT_MAX || v > FLT_MAX)) {
+                rb_raise(eStatementError, "Invalid value: %f", v);
+            }
+
+            result = cass_statement_bind_float_by_name(cassandra_statement->statement, name, v);
+        }
+        break;
+
+    case CASS_VALUE_TYPE_DOUBLE:
+        result = cass_statement_bind_double_by_name(cassandra_statement->statement, name, NUM2DBL(value));
+        break;
+
+    case CASS_VALUE_TYPE_BOOLEAN:
+        {
+            cass_bool_t v = RTEST(value) ? cass_true : cass_false;
+            result = cass_statement_bind_bool_by_name(cassandra_statement->statement, name, v);
+        }
+        statement_bind_boolean(statement, key, value);
+        break;
+
+    case CASS_VALUE_TYPE_TEXT:
+    case CASS_VALUE_TYPE_ASCII:
+    case CASS_VALUE_TYPE_VARCHAR:
+        result = cass_statement_bind_string_by_name(cassandra_statement->statement, name, StringValueCStr(value));
+        break;
+
+    case CASS_VALUE_TYPE_TIMESTAMP:
+        if (rb_obj_class(value) != rb_cTime) {
+            value = rb_funcall(value, id_to_time, 0);
+        }
+        result = cass_statement_bind_int64_by_name(cassandra_statement->statement, name, (cass_int64_t)(NUM2DBL(rb_Float(value)) * 1000));
+        break;
+
+    case CASS_VALUE_TYPE_UUID:
+        {
+            CassUuid uuid;
+            const char *uuid_string = StringValueCStr(value);
+
+            cass_uuid_from_string(uuid_string, &uuid);
+            result = cass_statement_bind_uuid_by_name(cassandra_statement->statement, name, uuid);
+        }
+        break;
+
+    default:
+        rb_raise(rb_eTypeError, "Unsupported %"PRIsVALUE" type: %s=%"PRIsVALUE"", rb_obj_class(value), name, value);
+    }
+
+result_check:
+    if (result != CASS_OK) {
+        rb_raise(eStatementError, "Failed to bind value: %s", cass_error_desc(result));
+    }
+
+    return ST_CONTINUE;
+}
+
+static VALUE statement_bind(VALUE self, VALUE hash)
+{
+    CassandraStatement *cassandra_statement;
+
+    Check_Type(hash, T_HASH);
+    TypedData_Get_Struct(self, CassandraStatement, &cassandra_statement_data_type, cassandra_statement);
+
+    rb_hash_foreach(hash, hash_cb, (VALUE)cassandra_statement);
+    return self;
+}
+
 static VALUE statement_page_size(VALUE self, VALUE page_size)
 {
     CassandraStatement *cassandra_statement;
@@ -208,6 +342,9 @@ static void statement_destroy(void *ptr)
 {
     CassandraStatement *cassandra_statement = (CassandraStatement *)ptr;
 
+    if (cassandra_statement->prepared) {
+        cass_prepared_free(cassandra_statement->prepared);
+    }
     if (cassandra_statement->statement) {
         cass_statement_free(cassandra_statement->statement);
     }
@@ -236,6 +373,7 @@ void Init_statement(void)
     rb_define_method(cStatement, "bind_varchar", statement_bind_text, 2);
     rb_define_method(cStatement, "bind_timestamp", statement_bind_timestamp, 2);
     rb_define_method(cStatement, "bind_uuid", statement_bind_uuid, 2);
+    rb_define_method(cStatement, "bind", statement_bind, 1);
 
     rb_define_method(cStatement, "page_size=", statement_page_size, 1);
 }

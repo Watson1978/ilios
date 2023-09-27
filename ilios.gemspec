@@ -13,6 +13,8 @@ Gem::Specification.new do |spec|
   spec.homepage = "https://github.com/Watson1978/ilios"
   spec.required_ruby_version = ">= 3.0.0"
 
+  spec.requirements << "cmake"
+
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = "https://github.com/Watson1978/ilios"
   # spec.metadata["changelog_uri"] = "TODO: Put your gem's CHANGELOG.md URL here."
@@ -24,10 +26,7 @@ Gem::Specification.new do |spec|
       (f == __FILE__) || f.match(%r{\A(?:(?:bin|test|spec|features)/|\.(?:git|circleci)|appveyor)})
     end
   end
-  spec.bindir = "exe"
-  spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
-
   spec.extensions << 'ext/ilios/extconf.rb'
 
   spec.add_runtime_dependency 'mini_portile2', '~> 2.8'

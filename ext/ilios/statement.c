@@ -274,7 +274,6 @@ static int hash_cb(VALUE key, VALUE value, VALUE statement)
             cass_bool_t v = RTEST(value) ? cass_true : cass_false;
             result = cass_statement_bind_bool_by_name(cassandra_statement->statement, name, v);
         }
-        statement_bind_boolean(statement, key, value);
         break;
 
     case CASS_VALUE_TYPE_TEXT:

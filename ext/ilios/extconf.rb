@@ -34,6 +34,10 @@ unless File.exist?(CASSANDRA_CPP_DRIVER_INSTALL_PATH)
   cassandra_recipe.cook
   lib_path = File.join(File.dirname(__FILE__), "ports/#{cassandra_recipe.host}/cpp-driver/#{Ilios::CASSANDRA_CPP_DRIVER_VERSION}")
   FileUtils.mv(lib_path, CASSANDRA_CPP_DRIVER_INSTALL_PATH)
+  if RUBY_PLATFORM =~ /darwin/
+    system("install_name_tool -change @rpath/libuv.1.dylib #{LIBUV_INSTALL_PATH}/lib/libuv.1.dylib #{CASSANDRA_CPP_DRIVER_INSTALL_PATH}/lib/libcassandra.2.dylib")
+    system("install_name_tool -id #{CASSANDRA_CPP_DRIVER_INSTALL_PATH}/lib/libcassandra.2.dylib #{CASSANDRA_CPP_DRIVER_INSTALL_PATH}/lib/libcassandra.2.dylib")
+  end
 end
 
 FileUtils.rm_rf("ports")

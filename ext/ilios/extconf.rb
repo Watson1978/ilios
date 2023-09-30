@@ -35,6 +35,12 @@ unless File.exist?(CASSANDRA_CPP_DRIVER_INSTALL_PATH)
   lib_path = File.join(File.dirname(__FILE__), "ports/#{cassandra_recipe.host}/cpp-driver/#{Ilios::CASSANDRA_CPP_DRIVER_VERSION}")
   FileUtils.mv(lib_path, CASSANDRA_CPP_DRIVER_INSTALL_PATH)
   if RUBY_PLATFORM =~ /darwin/
+    unless find_executable("install_name_tool")
+      puts "------------------------------------------------------"
+      puts "Error: install_name_tool is required to build this gem"
+      puts "------------------------------------------------------"
+      raise
+    end
     system("install_name_tool -change @rpath/libuv.1.dylib #{LIBUV_INSTALL_PATH}/lib/libuv.1.dylib #{CASSANDRA_CPP_DRIVER_INSTALL_PATH}/lib/libcassandra.2.dylib")
     system("install_name_tool -id #{CASSANDRA_CPP_DRIVER_INSTALL_PATH}/lib/libcassandra.2.dylib #{CASSANDRA_CPP_DRIVER_INSTALL_PATH}/lib/libcassandra.2.dylib")
   end

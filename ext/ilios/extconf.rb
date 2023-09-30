@@ -16,42 +16,30 @@ unless find_executable("cmake")
 end
 
 unless File.exist?(LIBUV_INSTALL_PATH)
-  class LibuvRecipe < MiniPortileCMake
-    def configure_prefix
-      "-DCMAKE_INSTALL_PREFIX=#{LIBUV_INSTALL_PATH}"
-    end
-  end
-
-  libuv_recipe = LibuvRecipe.new("libuv", Ilios::LIBUV_VERSION, make_command: "make -j")
+  libuv_recipe = MiniPortileCMake.new("libuv", Ilios::LIBUV_VERSION, make_command: "make -j")
   libuv_recipe.files << {
     :url => "https://github.com/libuv/libuv/archive/v#{Ilios::LIBUV_VERSION}.tar.gz",
   }
   libuv_recipe.cook
+  lib_path = File.join(File.dirname(__FILE__), "ports/#{libuv_recipe.host}/libuv/#{Ilios::LIBUV_VERSION}")
+  FileUtils.mv(lib_path, LIBUV_INSTALL_PATH)
 end
 
 unless File.exist?(CASSANDRA_CPP_DRIVER_INSTALL_PATH)
-  class CassandraRecipe < MiniPortileCMake
-    def configure_prefix
-      "-DCMAKE_INSTALL_PREFIX=#{CASSANDRA_CPP_DRIVER_INSTALL_PATH}"
-    end
-
-    def cmake_compile_flags
-      flags = super
-      flags.unshift "-DCASS_BUILD_STATIC=ON,"
-    end
-  end
-
   ENV["LIBUV_ROOT_DIR"] = LIBUV_INSTALL_PATH
-  cassandra_recipe = CassandraRecipe.new("cpp-driver", Ilios::CASSANDRA_CPP_DRIVER_VERSION, make_command: "make -j")
+  cassandra_recipe = MiniPortileCMake.new("cpp-driver", Ilios::CASSANDRA_CPP_DRIVER_VERSION, make_command: "make -j")
   cassandra_recipe.files << {
     :url => "https://github.com/datastax/cpp-driver/archive/#{Ilios::CASSANDRA_CPP_DRIVER_VERSION}.tar.gz",
   }
   cassandra_recipe.cook
+  lib_path = File.join(File.dirname(__FILE__), "ports/#{cassandra_recipe.host}/cpp-driver/#{Ilios::CASSANDRA_CPP_DRIVER_VERSION}")
+  FileUtils.mv(lib_path, CASSANDRA_CPP_DRIVER_INSTALL_PATH)
 end
 
 FileUtils.rm_rf("ports")
 FileUtils.rm_rf("tmp")
 
-$CPPFLAGS += " -I#{CASSANDRA_CPP_DRIVER_INSTALL_PATH}/include #{CASSANDRA_CPP_DRIVER_INSTALL_PATH}/lib/libcassandra_static.a"
+$CPPFLAGS += " -I#{CASSANDRA_CPP_DRIVER_INSTALL_PATH}/include"
+$LDFLAGS += " -L#{CASSANDRA_CPP_DRIVER_INSTALL_PATH}/lib -Wl,-rpath,#{CASSANDRA_CPP_DRIVER_INSTALL_PATH}/lib -lcassandra"
 
 create_makefile('ilios')

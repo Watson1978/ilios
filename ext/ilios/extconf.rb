@@ -30,7 +30,7 @@ unless File.exist?(LIBUV_INSTALL_PATH)
       puts "------------------------------------------------------"
       raise
     end
-    system("install_name_tool -id #{LIBUV_INSTALL_PATH}/lib/libuv.1.dylib #{LIBUV_INSTALL_PATH}/lib/libuv.1.dylib")
+    xsystem("install_name_tool -id #{LIBUV_INSTALL_PATH}/lib/libuv.1.dylib #{LIBUV_INSTALL_PATH}/lib/libuv.1.dylib")
   end
 end
 
@@ -44,7 +44,7 @@ unless File.exist?(CASSANDRA_CPP_DRIVER_INSTALL_PATH)
   lib_path = File.expand_path("ports/#{cassandra_recipe.host}/cpp-driver/#{Ilios::CASSANDRA_CPP_DRIVER_VERSION}")
   FileUtils.mv(lib_path, CASSANDRA_CPP_DRIVER_INSTALL_PATH)
   if RUBY_PLATFORM =~ /darwin/
-    system("install_name_tool -id #{CASSANDRA_CPP_DRIVER_INSTALL_PATH}/lib/libcassandra.2.dylib #{CASSANDRA_CPP_DRIVER_INSTALL_PATH}/lib/libcassandra.2.dylib")
+    xsystem("install_name_tool -id #{CASSANDRA_CPP_DRIVER_INSTALL_PATH}/lib/libcassandra.2.dylib #{CASSANDRA_CPP_DRIVER_INSTALL_PATH}/lib/libcassandra.2.dylib")
   end
 end
 

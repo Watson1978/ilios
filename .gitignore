@@ -17,4 +17,7 @@
 /ext/ilios/ports
 /ext/ilios/tmp
 
+/lib/*.bundle
+/lib/*.so
+
 Gemfile.lock

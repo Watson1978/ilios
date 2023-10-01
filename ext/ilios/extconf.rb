@@ -5,8 +5,8 @@ require "mini_portile2"
 require "fileutils"
 require 'mkmf'
 
-CASSANDRA_CPP_DRIVER_INSTALL_PATH = File.expand_path(File.join(File.dirname(__FILE__), "cpp-driver"))
-LIBUV_INSTALL_PATH = File.expand_path(File.join(File.dirname(__FILE__), "libuv"))
+CASSANDRA_CPP_DRIVER_INSTALL_PATH = File.expand_path("cpp-driver")
+LIBUV_INSTALL_PATH = File.expand_path("libuv")
 
 unless find_executable("cmake")
   puts "--------------------------------------------------"
@@ -21,7 +21,7 @@ unless File.exist?(LIBUV_INSTALL_PATH)
     url: "https://github.com/libuv/libuv/archive/v#{Ilios::LIBUV_VERSION}.tar.gz",
   }
   libuv_recipe.cook
-  lib_path = File.join(File.dirname(__FILE__), "ports/#{libuv_recipe.host}/libuv/#{Ilios::LIBUV_VERSION}")
+  lib_path = File.expand_path("ports/#{libuv_recipe.host}/libuv/#{Ilios::LIBUV_VERSION}")
   FileUtils.mv(lib_path, LIBUV_INSTALL_PATH)
   if RUBY_PLATFORM =~ /darwin/
     unless find_executable("install_name_tool")
@@ -41,7 +41,7 @@ unless File.exist?(CASSANDRA_CPP_DRIVER_INSTALL_PATH)
     url: "https://github.com/datastax/cpp-driver/archive/#{Ilios::CASSANDRA_CPP_DRIVER_VERSION}.tar.gz",
   }
   cassandra_recipe.cook
-  lib_path = File.join(File.dirname(__FILE__), "ports/#{cassandra_recipe.host}/cpp-driver/#{Ilios::CASSANDRA_CPP_DRIVER_VERSION}")
+  lib_path = File.expand_path("ports/#{cassandra_recipe.host}/cpp-driver/#{Ilios::CASSANDRA_CPP_DRIVER_VERSION}")
   FileUtils.mv(lib_path, CASSANDRA_CPP_DRIVER_INSTALL_PATH)
   if RUBY_PLATFORM =~ /darwin/
     system("install_name_tool -id #{CASSANDRA_CPP_DRIVER_INSTALL_PATH}/lib/libcassandra.2.dylib #{CASSANDRA_CPP_DRIVER_INSTALL_PATH}/lib/libcassandra.2.dylib")

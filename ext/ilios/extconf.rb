@@ -16,13 +16,22 @@ unless find_executable("cmake")
 end
 
 unless File.exist?(LIBUV_INSTALL_PATH)
-  libuv_recipe = MiniPortileCMake.new("libuv", Ilios::LIBUV_VERSION, make_command: "make -j")
+  class LibuvRecipe < MiniPortileCMake
+    def configure_prefix
+      "-DCMAKE_INSTALL_PREFIX=#{LIBUV_INSTALL_PATH}"
+    end
+
+    def configure_defaults
+      flags = super
+      flags << "-DCMAKE_BUILD_TYPE=Release"
+    end
+  end
+
+  libuv_recipe = LibuvRecipe.new("libuv", Ilios::LIBUV_VERSION, make_command: "make -j")
   libuv_recipe.files << {
     url: "https://github.com/libuv/libuv/archive/v#{Ilios::LIBUV_VERSION}.tar.gz",
   }
   libuv_recipe.cook
-  lib_path = File.expand_path("ports/#{libuv_recipe.host}/libuv/#{Ilios::LIBUV_VERSION}")
-  FileUtils.mv(lib_path, LIBUV_INSTALL_PATH)
   if RUBY_PLATFORM =~ /darwin/
     unless find_executable("install_name_tool")
       puts "------------------------------------------------------"
@@ -35,14 +44,26 @@ unless File.exist?(LIBUV_INSTALL_PATH)
 end
 
 unless File.exist?(CASSANDRA_CPP_DRIVER_INSTALL_PATH)
-  ENV["LIBUV_ROOT_DIR"] = LIBUV_INSTALL_PATH
-  cassandra_recipe = MiniPortileCMake.new("cpp-driver", Ilios::CASSANDRA_CPP_DRIVER_VERSION, make_command: "make -j")
+  class CassandraRecipe < MiniPortileCMake
+    def initialize(name, version, **kwargs)
+      ENV["LIBUV_ROOT_DIR"] = LIBUV_INSTALL_PATH
+      super(name, version, **kwargs)
+    end
+    def configure_prefix
+      "-DCMAKE_INSTALL_PREFIX=#{CASSANDRA_CPP_DRIVER_INSTALL_PATH}"
+    end
+
+    def configure_defaults
+      flags = super
+      flags << "-DCMAKE_BUILD_TYPE=Release"
+    end
+  end
+
+  cassandra_recipe = CassandraRecipe.new("cpp-driver", Ilios::CASSANDRA_CPP_DRIVER_VERSION, make_command: "make -j")
   cassandra_recipe.files << {
     url: "https://github.com/datastax/cpp-driver/archive/#{Ilios::CASSANDRA_CPP_DRIVER_VERSION}.tar.gz",
   }
   cassandra_recipe.cook
-  lib_path = File.expand_path("ports/#{cassandra_recipe.host}/cpp-driver/#{Ilios::CASSANDRA_CPP_DRIVER_VERSION}")
-  FileUtils.mv(lib_path, CASSANDRA_CPP_DRIVER_INSTALL_PATH)
   if RUBY_PLATFORM =~ /darwin/
     xsystem("install_name_tool -id #{CASSANDRA_CPP_DRIVER_INSTALL_PATH}/lib/libcassandra.2.dylib #{CASSANDRA_CPP_DRIVER_INSTALL_PATH}/lib/libcassandra.2.dylib")
   end

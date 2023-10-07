@@ -33,6 +33,7 @@ static VALUE cassandra_connect(VALUE self)
     for (int i = 0; i < RARRAY_LEN(hosts); i++) {
         VALUE host = RARRAY_AREF(hosts, i);
 
+        cass_cluster_set_contact_points(cassandra_session->cluster, ""); // Clear previous contact points
         cass_cluster_set_contact_points(cassandra_session->cluster, StringValueCStr(host));
         cassandra_session->session = cass_session_new();
         cassandra_session->connect_future =  cass_session_connect_keyspace(cassandra_session->session, cassandra_session->cluster, StringValueCStr(keyspace));

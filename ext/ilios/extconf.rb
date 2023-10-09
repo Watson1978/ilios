@@ -5,6 +5,9 @@ require "mini_portile2"
 require "fileutils"
 require 'mkmf'
 
+have_func('malloc_usable_size')
+have_func('malloc_size')
+
 CASSANDRA_CPP_DRIVER_INSTALL_PATH = File.expand_path("cpp-driver")
 LIBUV_INSTALL_PATH = File.expand_path("libuv")
 

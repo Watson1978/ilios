@@ -21,15 +21,43 @@ VALUE sym_constant_delay_ms;
 VALUE sym_max_speculative_executions;
 VALUE sym_page_size;
 
-void Init_ilios(void)
-{
-    // Use Ruby's memory allocator in cassandra-cpp-driver in order to notify memory usage in library
-    // and work Ruby's GC properly.
-#if 0
-    // Cause SEGV in cass_session_close()
-    cass_alloc_set_functions(xmalloc, xrealloc, xfree);
+#if defined(HAVE_MALLOC_USABLE_SIZE)
+#include <malloc.h>
+#elif defined(HAVE_MALLOC_SIZE)
+#include <malloc/malloc.h>
 #endif
 
+ssize_t ilios_malloc_size(const void *ptr)
+{
+#if defined(HAVE_MALLOC_USABLE_SIZE)
+    return malloc_usable_size(ptr);
+#elif defined(HAVE_MALLOC_SIZE)
+    return malloc_size(ptr);
+#endif
+}
+
+void *ilios_malloc(size_t size)
+{
+    rb_gc_adjust_memory_usage(size);
+    return malloc(size);
+}
+
+void *ilios_realloc(void *ptr, size_t size)
+{
+    ssize_t before_size = ilios_malloc_size(ptr);
+    rb_gc_adjust_memory_usage(size - before_size);
+    return realloc(ptr, size);
+}
+
+void ilios_free(void *ptr)
+{
+    ssize_t size = ilios_malloc_size(ptr);
+    rb_gc_adjust_memory_usage(-size);
+    free(ptr);
+}
+
+void Init_ilios(void)
+{
     mIlios = rb_define_module("Ilios");
     mCassandra = rb_define_module_under(mIlios, "Cassandra");
     cSession = rb_define_class_under(mCassandra, "Session", rb_cObject);
@@ -56,4 +84,8 @@ void Init_ilios(void)
     Init_statement();
     Init_result();
     Init_future();
+
+#if defined(HAVE_MALLOC_USABLE_SIZE) || defined(HAVE_MALLOC_SIZE)
+    cass_alloc_set_functions(ilios_malloc, ilios_realloc, ilios_free);
+#endif
 }

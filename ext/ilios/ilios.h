@@ -92,7 +92,8 @@ extern void nogvl_future_wait(CassFuture *future);
 extern CassFuture *nogvl_session_prepare(CassSession* session, VALUE query);
 extern CassFuture *nogvl_session_execute(CassSession* session, CassStatement* statement);
 
-extern VALUE result_await(VALUE self);
+extern void statement_default_config(CassandraStatement *cassandra_statement);
+extern void result_await(CassandraResult *cassandra_result);
 extern VALUE result_convert_row(const CassRow *row, size_t column_count);
 
 

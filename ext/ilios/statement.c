@@ -18,6 +18,13 @@ const rb_data_type_t cassandra_statement_data_type = {
     RUBY_TYPED_FREE_IMMEDIATELY | RUBY_TYPED_WB_PROTECTED | RUBY_TYPED_FROZEN_SHAREABLE,
 };
 
+void statement_default_config(CassandraStatement *cassandra_statement)
+{
+    VALUE config = rb_cvar_get(mCassandra, id_cvar_config);
+
+    cass_statement_set_paging_size(cassandra_statement->statement, NUM2INT(rb_hash_aref(config, sym_page_size)));
+}
+
 static VALUE statement_bind_null(VALUE self, VALUE idx)
 {
     CassandraStatement *cassandra_statement;

@@ -33,15 +33,13 @@ static void future_result_success_yield(CassandraFuture *cassandra_future)
                 {
                     CassandraStatement *cassandra_statement;
                     VALUE cassandra_statement_obj;
-                    VALUE config;
 
                     cassandra_statement_obj = CREATE_STATEMENT(cassandra_statement);
                     cassandra_statement->prepared = cass_future_get_prepared(cassandra_future->future);
                     cassandra_statement->statement = cass_prepared_bind(cassandra_statement->prepared);
                     cassandra_statement->session_obj = cassandra_future->session_obj;
 
-                    config = rb_cvar_get(mCassandra, id_cvar_config);
-                    cass_statement_set_paging_size(cassandra_statement->statement, NUM2INT(rb_hash_aref(config, sym_page_size)));
+                    statement_default_config(cassandra_statement);
 
                     obj = cassandra_statement_obj;
                 }

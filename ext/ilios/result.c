@@ -18,12 +18,8 @@ const rb_data_type_t cassandra_result_data_type = {
     RUBY_TYPED_FREE_IMMEDIATELY | RUBY_TYPED_WB_PROTECTED | RUBY_TYPED_FROZEN_SHAREABLE,
 };
 
-VALUE result_await(VALUE self)
+void result_await(CassandraResult *cassandra_result)
 {
-    CassandraResult *cassandra_result;
-
-    GET_RESULT(self, cassandra_result);
-
     nogvl_future_wait(cassandra_result->future);
 
     if (cass_future_error_code(cassandra_result->future) != CASS_OK) {
@@ -36,8 +32,6 @@ VALUE result_await(VALUE self)
     if (cassandra_result->result == NULL) {
         cassandra_result->result = cass_future_get_result(cassandra_result->future);
     }
-
-    return self;
 }
 
 static VALUE result_next_page(VALUE self)
@@ -65,7 +59,7 @@ static VALUE result_next_page(VALUE self)
     cassandra_result->result = NULL;
     cassandra_result->future = result_future;
 
-    result_await(self);
+    result_await(cassandra_result);
     return self;
 }
 

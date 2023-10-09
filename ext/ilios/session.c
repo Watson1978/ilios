@@ -42,7 +42,6 @@ static VALUE session_prepare(VALUE self, VALUE query)
     CassandraStatement *cassandra_statement;
     CassFuture *prepare_future;
     VALUE cassandra_statement_obj;
-    VALUE config;
 
     GET_SESSION(self, cassandra_session);
 
@@ -64,8 +63,7 @@ static VALUE session_prepare(VALUE self, VALUE query)
     cassandra_statement->session_obj = self;
     cass_future_free(prepare_future);
 
-    config = rb_cvar_get(mCassandra, id_cvar_config);
-    cass_statement_set_paging_size(cassandra_statement->statement, NUM2INT(rb_hash_aref(config, sym_page_size)));
+    statement_default_config(cassandra_statement);
     return cassandra_statement_obj;
 }
 
@@ -108,7 +106,7 @@ static VALUE session_execute(VALUE self, VALUE statement)
     cassandra_result->future = result_future;
     cassandra_result->statement_obj = statement;
 
-    result_await(cassandra_result_obj);
+    result_await(cassandra_result);
     return cassandra_result_obj;
 }
 

@@ -54,6 +54,26 @@ static VALUE session_execute_async(VALUE self, VALUE statement)
 {
     CassandraSession *cassandra_session;
     CassandraStatement *cassandra_statement;
+    CassandraFuture *cassandra_future;
+    CassFuture *result_future;
+    VALUE cassandra_future_obj;
+
+    GET_SESSION(self, cassandra_session);
+    GET_STATEMENT(statement, cassandra_statement);
+
+    result_future = nogvl_session_execute(cassandra_session->session, cassandra_statement->statement);
+
+    cassandra_future_obj = CREATE_FUTURE(cassandra_future);
+    cassandra_future->future = result_future;
+    cassandra_future->statement_obj = statement;
+
+    return cassandra_future_obj;
+}
+
+static VALUE session_execute(VALUE self, VALUE statement)
+{
+    CassandraSession *cassandra_session;
+    CassandraStatement *cassandra_statement;
     CassandraResult *cassandra_result;
     CassFuture *result_future;
     VALUE cassandra_result_obj;
@@ -67,12 +87,6 @@ static VALUE session_execute_async(VALUE self, VALUE statement)
     cassandra_result->future = result_future;
     cassandra_result->statement_obj = statement;
 
-    return cassandra_result_obj;
-}
-
-static VALUE session_execute(VALUE self, VALUE statement)
-{
-    VALUE cassandra_result_obj = session_execute_async(self, statement);
     result_await(cassandra_result_obj);
     return cassandra_result_obj;
 }

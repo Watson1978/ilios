@@ -5,6 +5,7 @@ VALUE mCassandra;
 VALUE cSession;
 VALUE cStatement;
 VALUE cResult;
+VALUE cFuture;
 VALUE eConnectError;
 VALUE eExecutionError;
 VALUE eStatementError;
@@ -34,6 +35,7 @@ void Init_ilios(void)
     cSession = rb_define_class_under(mCassandra, "Session", rb_cObject);
     cStatement = rb_define_class_under(mCassandra, "Statement", rb_cObject);
     cResult = rb_define_class_under(mCassandra, "Result", rb_cObject);
+    cFuture = rb_define_class_under(mCassandra, "Future", rb_cObject);
     eConnectError = rb_define_class_under(mCassandra, "ConnectError", rb_eStandardError);
     eExecutionError = rb_define_class_under(mCassandra, "ExecutionError", rb_eStandardError);
     eStatementError = rb_define_class_under(mCassandra, "StatementError", rb_eStandardError);
@@ -53,4 +55,5 @@ void Init_ilios(void)
     Init_session();
     Init_statement();
     Init_result();
+    Init_future();
 }

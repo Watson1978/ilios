@@ -40,7 +40,7 @@ VALUE result_await(VALUE self)
     return self;
 }
 
-VALUE result_next_page(VALUE self)
+static VALUE result_next_page(VALUE self)
 {
     CassandraResult *cassandra_result;
     CassandraStatement *cassandra_statement;
@@ -177,7 +177,7 @@ VALUE result_convert_row(const CassRow *row, size_t column_count)
     return row_array;
 }
 
-VALUE result_each(VALUE self)
+static VALUE result_each(VALUE self)
 {
     CassandraResult *cassandra_result;
     CassIterator *iterator;

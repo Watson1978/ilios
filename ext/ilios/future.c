@@ -74,7 +74,7 @@ static void future_result_failure_yield(CassandraFuture *cassandra_future)
     }
 }
 
-VALUE future_result_yielder(void *arg)
+static VALUE future_result_yielder(void *arg)
 {
     CassandraFuture *cassandra_future = (CassandraFuture *)arg;
 

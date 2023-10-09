@@ -17,6 +17,7 @@ $ gem install ilios
 ```
 
 ## Example
+### Basic usage
 
 ```ruby
 require 'ilios'
@@ -88,6 +89,45 @@ while(result.next_page)
     p row
   end
 end
+```
+
+### Synchronous API
+`Ilios::Cassandra::Session#prepare` and `Ilios::Cassandra::Session#execute` are provided as synchronous API.
+
+```ruby
+statement = Ilios::Cassandra.session.prepare(<<~CQL)
+  SELECT * FROM ilios.example
+CQL
+result = Ilios::Cassandra.session.execute(statement)
+```
+
+### Asynchronous API
+`Ilios::Cassandra::Session#prepare_async` and `Ilios::Cassandra::Session#execute_async` are provided as asynchronous API.
+
+```ruby
+prepare_future = Ilios::Cassandra.session.prepare_async(<<~CQL)
+  INSERT INTO ilios.example (
+    id,
+    message,
+    created_at
+  ) VALUES (?, ?, ?)
+CQL
+
+prepare_future.on_success { |statement|
+  statement.bind({
+    id: 1,
+    message: 'Hello World',
+    created_at: Time.now,
+  })
+  result_future = Ilios::Cassandra.session.execute_async(statement)
+  result_future.on_success { |result|
+    p result
+    p "success"
+  }
+  result_future.on_failure {
+    p "fail"
+  }
+}
 ```
 
 ## Contributing

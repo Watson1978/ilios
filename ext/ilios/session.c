@@ -17,6 +17,25 @@ const rb_data_type_t cassandra_session_data_type = {
     RUBY_TYPED_FREE_IMMEDIATELY | RUBY_TYPED_WB_PROTECTED | RUBY_TYPED_FROZEN_SHAREABLE,
 };
 
+static VALUE session_prepare_async(VALUE self, VALUE query)
+{
+    CassandraSession *cassandra_session;
+    CassandraFuture *cassandra_future;
+    CassFuture *prepare_future;
+    VALUE cassandra_future_obj;
+
+    GET_SESSION(self, cassandra_session);
+
+    prepare_future = nogvl_session_prepare(cassandra_session->session, query);
+
+    cassandra_future_obj = CREATE_FUTURE(cassandra_future);
+    cassandra_future->kind = prepare_async;
+    cassandra_future->future = prepare_future;
+    cassandra_future->session_obj = self;
+
+    return cassandra_future_obj;
+}
+
 static VALUE session_prepare(VALUE self, VALUE query)
 {
     CassandraSession *cassandra_session;
@@ -64,7 +83,9 @@ static VALUE session_execute_async(VALUE self, VALUE statement)
     result_future = nogvl_session_execute(cassandra_session->session, cassandra_statement->statement);
 
     cassandra_future_obj = CREATE_FUTURE(cassandra_future);
+    cassandra_future->kind = execute_async;
     cassandra_future->future = result_future;
+    cassandra_future->session_obj = self;
     cassandra_future->statement_obj = statement;
 
     return cassandra_future_obj;
@@ -119,6 +140,7 @@ void Init_session(void)
 {
     rb_undef_alloc_func(cSession);
 
+    rb_define_method(cSession, "prepare_async", session_prepare_async, 1);
     rb_define_method(cSession, "prepare", session_prepare, 1);
     rb_define_method(cSession, "execute_async", session_execute_async, 1);
     rb_define_method(cSession, "execute", session_execute, 1);

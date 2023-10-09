@@ -17,6 +17,11 @@
 #define CREATE_RESULT(var)      TypedData_Make_Struct(cResult, CassandraResult, &cassandra_result_data_type, var)
 #define CREATE_FUTURE(var)      TypedData_Make_Struct(cFuture, CassandraFuture, &cassandra_future_data_type, var)
 
+typedef enum {
+  prepare_async,
+  execute_async
+} future_kind;
+
 typedef struct
 {
     CassCluster* cluster;
@@ -42,8 +47,9 @@ typedef struct
 typedef struct
 {
     CassFuture *future;
-    uv_mutex_t mutex;
-    uv_cond_t cond;
+    future_kind kind;
+
+    VALUE session_obj;
     VALUE statement_obj;
     VALUE thread_obj;
     VALUE on_success_block;

@@ -25,15 +25,42 @@ const rb_data_type_t cassandra_future_data_type = {
 static void future_result_success_yield(CassandraFuture *cassandra_future)
 {
     if (cassandra_future->on_success_block) {
+        VALUE obj;
+
         if (rb_proc_arity(cassandra_future->on_success_block)) {
-            CassandraResult *cassandra_result;
-            VALUE cassandra_result_obj;
+            switch (cassandra_future->kind) {
+            case prepare_async:
+                {
+                    CassandraStatement *cassandra_statement;
+                    VALUE cassandra_statement_obj;
+                    VALUE config;
 
-            cassandra_result_obj = CREATE_RESULT(cassandra_result);
-            cassandra_result->result = cass_future_get_result(cassandra_future->future);
-            cassandra_result->statement_obj = cassandra_future->statement_obj;
+                    cassandra_statement_obj = CREATE_STATEMENT(cassandra_statement);
+                    cassandra_statement->prepared = cass_future_get_prepared(cassandra_future->future);
+                    cassandra_statement->statement = cass_prepared_bind(cassandra_statement->prepared);
+                    cassandra_statement->session_obj = cassandra_future->session_obj;
 
-            rb_proc_call_with_block(cassandra_future->on_success_block, 1, &cassandra_result_obj, Qnil);
+                    config = rb_cvar_get(mCassandra, id_cvar_config);
+                    cass_statement_set_paging_size(cassandra_statement->statement, NUM2INT(rb_hash_aref(config, sym_page_size)));
+
+                    obj = cassandra_statement_obj;
+                }
+                break;
+            case execute_async:
+                {
+                    CassandraResult *cassandra_result;
+                    VALUE cassandra_result_obj;
+
+                    cassandra_result_obj = CREATE_RESULT(cassandra_result);
+                    cassandra_result->result = cass_future_get_result(cassandra_future->future);
+                    cassandra_result->statement_obj = cassandra_future->statement_obj;
+
+                    obj = cassandra_result_obj;
+                }
+                break;
+            }
+
+            rb_proc_call_with_block(cassandra_future->on_success_block, 1, &obj, Qnil);
         } else {
             rb_proc_call_with_block(cassandra_future->on_success_block, 0, NULL, Qnil);
         }
@@ -108,6 +135,7 @@ static VALUE future_on_failure(VALUE self)
 static void future_mark(void *ptr)
 {
     CassandraFuture *cassandra_future = (CassandraFuture *)ptr;
+    rb_gc_mark(cassandra_future->session_obj);
     rb_gc_mark(cassandra_future->statement_obj);
     rb_gc_mark(cassandra_future->thread_obj);
     rb_gc_mark(cassandra_future->on_success_block);

@@ -74,7 +74,9 @@ static void future_result_failure_yield(CassandraFuture *cassandra_future)
 
 static VALUE future_result_yielder(void *arg)
 {
-    CassandraFuture *cassandra_future = (CassandraFuture *)arg;
+    CassandraFuture *cassandra_future;
+
+    GET_FUTURE((VALUE)arg, cassandra_future);
 
     if (cass_future_error_code(cassandra_future->future) == CASS_OK) {
         future_result_success_yield(cassandra_future);
@@ -101,7 +103,7 @@ static VALUE future_on_success(VALUE self)
         } else {
             if (!cassandra_future->thread_obj) {
                 uv_sem_wait(&sem_thread);
-                cassandra_future->thread_obj = rb_thread_create(future_result_yielder, (void*)cassandra_future);
+                cassandra_future->thread_obj = rb_thread_create(future_result_yielder, (void*)self);
             }
         }
     }
@@ -123,7 +125,7 @@ static VALUE future_on_failure(VALUE self)
         } else {
             if (!cassandra_future->thread_obj) {
                 uv_sem_wait(&sem_thread);
-                cassandra_future->thread_obj = rb_thread_create(future_result_yielder, (void*)cassandra_future);
+                cassandra_future->thread_obj = rb_thread_create(future_result_yielder, (void*)self);
             }
         }
     }

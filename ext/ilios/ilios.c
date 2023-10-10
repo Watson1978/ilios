@@ -51,9 +51,11 @@ void *ilios_realloc(void *ptr, size_t size)
 
 void ilios_free(void *ptr)
 {
-    ssize_t size = ilios_malloc_size(ptr);
-    rb_gc_adjust_memory_usage(-size);
-    free(ptr);
+    if (ptr) {
+        ssize_t size = ilios_malloc_size(ptr);
+        rb_gc_adjust_memory_usage(-size);
+        free(ptr);
+    }
 }
 
 void Init_ilios(void)

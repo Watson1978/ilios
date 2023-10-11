@@ -1,8 +1,10 @@
 #include "ilios.h"
 
-#define THREAD_MAX 4
+#define THREAD_PREPARE_MAX 10
+#define THREAD_EXECUTE_MAX 10
 
-uv_sem_t sem_thread;
+uv_sem_t sem_thread_prepare;
+uv_sem_t sem_thread_execute;
 
 static void future_mark(void *ptr);
 static void future_destroy(void *ptr);
@@ -21,6 +23,30 @@ const rb_data_type_t cassandra_future_data_type = {
     0, 0,
     RUBY_TYPED_FREE_IMMEDIATELY | RUBY_TYPED_WB_PROTECTED | RUBY_TYPED_FROZEN_SHAREABLE,
 };
+
+static void future_sem_wait(CassandraFuture *cassandra_future)
+{
+    switch (cassandra_future->kind) {
+    case prepare_async:
+        nogvl_sem_wait(&sem_thread_prepare);
+        break;
+    case execute_async:
+        nogvl_sem_wait(&sem_thread_execute);
+        break;
+    }
+}
+
+static void future_sem_post(CassandraFuture *cassandra_future)
+{
+    switch (cassandra_future->kind) {
+    case prepare_async:
+        uv_sem_post(&sem_thread_prepare);
+        break;
+    case execute_async:
+        uv_sem_post(&sem_thread_execute);
+        break;
+    }
+}
 
 static void future_result_success_yield(CassandraFuture *cassandra_future)
 {
@@ -78,13 +104,15 @@ static VALUE future_result_yielder(void *arg)
 
     GET_FUTURE((VALUE)arg, cassandra_future);
 
+    nogvl_future_wait(cassandra_future->future);
+
     if (cass_future_error_code(cassandra_future->future) == CASS_OK) {
         future_result_success_yield(cassandra_future);
     } else {
         future_result_failure_yield(cassandra_future);
     }
 
-    uv_sem_post(&sem_thread);
+    future_sem_post(cassandra_future);
     return Qnil;
 }
 
@@ -102,7 +130,7 @@ static VALUE future_on_success(VALUE self)
             }
         } else {
             if (!cassandra_future->thread_obj) {
-                uv_sem_wait(&sem_thread);
+                future_sem_wait(cassandra_future);
                 cassandra_future->thread_obj = rb_thread_create(future_result_yielder, (void*)self);
             }
         }
@@ -124,7 +152,7 @@ static VALUE future_on_failure(VALUE self)
             }
         } else {
             if (!cassandra_future->thread_obj) {
-                uv_sem_wait(&sem_thread);
+                future_sem_wait(cassandra_future);
                 cassandra_future->thread_obj = rb_thread_create(future_result_yielder, (void*)self);
             }
         }
@@ -164,5 +192,6 @@ void Init_future(void)
     rb_define_method(cFuture, "on_success", future_on_success, 0);
     rb_define_method(cFuture, "on_failure", future_on_failure, 0);
 
-    uv_sem_init(&sem_thread, THREAD_MAX);
+    uv_sem_init(&sem_thread_prepare, THREAD_PREPARE_MAX);
+    uv_sem_init(&sem_thread_execute, THREAD_EXECUTE_MAX);
 }

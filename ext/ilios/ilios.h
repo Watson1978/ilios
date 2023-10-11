@@ -91,6 +91,7 @@ extern void Init_future(void);
 extern void nogvl_future_wait(CassFuture *future);
 extern CassFuture *nogvl_session_prepare(CassSession* session, VALUE query);
 extern CassFuture *nogvl_session_execute(CassSession* session, CassStatement* statement);
+extern void nogvl_sem_wait(uv_sem_t *sem_thread);
 
 extern void statement_default_config(CassandraStatement *cassandra_statement);
 extern void result_await(CassandraResult *cassandra_result);

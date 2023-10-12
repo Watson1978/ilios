@@ -27,7 +27,7 @@ VALUE sym_page_size;
 #include <malloc/malloc.h>
 #endif
 
-ssize_t ilios_malloc_size(const void *ptr)
+ssize_t ilios_malloc_size(void *ptr)
 {
 #if defined(HAVE_MALLOC_USABLE_SIZE)
     return malloc_usable_size(ptr);

@@ -95,7 +95,6 @@ extern void nogvl_sem_wait(uv_sem_t *sem_thread);
 
 extern void statement_default_config(CassandraStatement *cassandra_statement);
 extern void result_await(CassandraResult *cassandra_result);
-extern VALUE result_convert_row(const CassRow *row, size_t column_count);
 
 
 #endif // ILIOS_H

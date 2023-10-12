@@ -63,7 +63,7 @@ static VALUE result_next_page(VALUE self)
     return self;
 }
 
-VALUE result_convert_row(const CassRow *row, size_t column_count)
+static VALUE result_convert_row(const CassRow *row, size_t column_count)
 {
     VALUE row_array = rb_ary_new2(column_count);
 

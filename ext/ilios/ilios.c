@@ -27,7 +27,7 @@ VALUE sym_page_size;
 #include <malloc/malloc.h>
 #endif
 
-ssize_t ilios_malloc_size(void *ptr)
+static ssize_t ilios_malloc_size(void *ptr)
 {
 #if defined(HAVE_MALLOC_USABLE_SIZE)
     return malloc_usable_size(ptr);
@@ -36,20 +36,20 @@ ssize_t ilios_malloc_size(void *ptr)
 #endif
 }
 
-void *ilios_malloc(size_t size)
+static void *ilios_malloc(size_t size)
 {
     rb_gc_adjust_memory_usage(size);
     return malloc(size);
 }
 
-void *ilios_realloc(void *ptr, size_t size)
+static void *ilios_realloc(void *ptr, size_t size)
 {
     ssize_t before_size = ilios_malloc_size(ptr);
     rb_gc_adjust_memory_usage(size - before_size);
     return realloc(ptr, size);
 }
 
-void ilios_free(void *ptr)
+static void ilios_free(void *ptr)
 {
     if (ptr) {
         ssize_t size = ilios_malloc_size(ptr);

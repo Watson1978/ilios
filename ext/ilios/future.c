@@ -104,8 +104,6 @@ static VALUE future_result_yielder(void *arg)
 
     GET_FUTURE((VALUE)arg, cassandra_future);
 
-    nogvl_future_wait(cassandra_future->future);
-
     if (cass_future_error_code(cassandra_future->future) == CASS_OK) {
         future_result_success_yield(cassandra_future);
     } else {

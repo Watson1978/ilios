@@ -143,6 +143,7 @@ static VALUE future_on_success(VALUE self)
             if (!cassandra_future->thread_obj) {
                 future_sem_wait(cassandra_future);
                 cassandra_future->thread_obj = rb_thread_create(future_result_yielder_thread, (void*)self);
+                rb_funcall(cassandra_future->thread_obj, id_abort_on_exception_set, 1, Qtrue);
             }
         }
     }
@@ -165,6 +166,7 @@ static VALUE future_on_failure(VALUE self)
             if (!cassandra_future->thread_obj) {
                 future_sem_wait(cassandra_future);
                 cassandra_future->thread_obj = rb_thread_create(future_result_yielder_thread, (void*)self);
+                rb_funcall(cassandra_future->thread_obj, id_abort_on_exception_set, 1, Qtrue);
             }
         }
     }

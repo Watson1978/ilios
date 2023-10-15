@@ -109,6 +109,8 @@ static VALUE future_result_yielder(VALUE arg)
     GET_FUTURE(arg, cassandra_future);
     nogvl_mutex_lock(&cassandra_future->proc_mutex);
 
+    nogvl_future_wait(cassandra_future->future);
+
     if (cass_future_error_code(cassandra_future->future) == CASS_OK) {
         future_result_success_yield(cassandra_future);
     } else {

@@ -89,6 +89,8 @@ void Init_ilios(void)
     Init_result();
     Init_future();
 
+    cass_log_set_level(CASS_LOG_ERROR);
+
 #if defined(HAVE_MALLOC_USABLE_SIZE) || defined(HAVE_MALLOC_SIZE)
     cass_alloc_set_functions(ilios_malloc, ilios_realloc, ilios_free);
 #endif

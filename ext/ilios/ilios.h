@@ -22,6 +22,11 @@ typedef enum {
   execute_async
 } future_kind;
 
+typedef enum {
+  initial,
+  invoked
+} future_proc_state;
+
 typedef struct
 {
     CassCluster* cluster;
@@ -54,6 +59,9 @@ typedef struct
     VALUE thread_obj;
     VALUE on_success_block;
     VALUE on_failure_block;
+
+    future_proc_state proc_state;
+    uv_mutex_t proc_mutex;
 } CassandraFuture;
 
 extern const rb_data_type_t cassandra_session_data_type;
@@ -93,6 +101,7 @@ extern void nogvl_future_wait(CassFuture *future);
 extern CassFuture *nogvl_session_prepare(CassSession* session, VALUE query);
 extern CassFuture *nogvl_session_execute(CassSession* session, CassStatement* statement);
 extern void nogvl_sem_wait(uv_sem_t *sem_thread);
+extern void nogvl_mutex_lock(uv_mutex_t *mutex);
 
 extern void statement_default_config(CassandraStatement *cassandra_statement);
 extern void result_await(CassandraResult *cassandra_result);

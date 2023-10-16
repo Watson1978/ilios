@@ -30,5 +30,4 @@ Gem::Specification.new do |spec|
   spec.extensions << 'ext/ilios/extconf.rb'
 
   spec.add_runtime_dependency 'mini_portile2', '~> 2.8'
-  spec.add_development_dependency 'rake-compiler', '~> 1.2'
 end

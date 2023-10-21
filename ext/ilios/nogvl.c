@@ -52,18 +52,6 @@ CassFuture *nogvl_session_execute(CassSession* session, CassStatement* statement
     return (CassFuture *)rb_thread_call_without_gvl(nogvl_session_execute_cb, &args, RUBY_UBF_PROCESS, 0);
 }
 
-static void *nogvl_sem_wait_cb(void *sem)
-{
-    uv_sem_wait((uv_sem_t *)sem);
-    return NULL;
-}
-
-void nogvl_sem_wait(uv_sem_t *sem_thread)
-{
-    // When using uv_sem_wait, it need to release GVL due to switch to another thread
-    rb_thread_call_without_gvl(nogvl_sem_wait_cb, sem_thread, RUBY_UBF_PROCESS, 0);
-}
-
 static void *nogvl_mutex_lock_cb(void *mutex)
 {
     uv_mutex_lock((uv_mutex_t *)mutex);
@@ -74,4 +62,24 @@ void nogvl_mutex_lock(uv_mutex_t *mutex)
 {
     // When using uv_mutex_lock, it need to release GVL due to switch to another thread
     rb_thread_call_without_gvl(nogvl_mutex_lock_cb, mutex, RUBY_UBF_PROCESS, 0);
+}
+
+typedef struct
+{
+    uv_cond_t *cond;
+    uv_mutex_t *mutex;
+} nogvl_cond_wait_arg;
+
+static void *nogvl_cond_wait_cb(void *arg)
+{
+    nogvl_cond_wait_arg *args = (nogvl_cond_wait_arg *)arg;
+    uv_cond_wait(args->cond, args->mutex);
+    return NULL;
+}
+
+void nogvl_cond_wait(uv_cond_t *cond, uv_mutex_t *mutex)
+{
+    nogvl_cond_wait_arg arg = { cond, mutex };
+    // When using uv_cond_wait, it need to release GVL due to switch to another thread
+    rb_thread_call_without_gvl(nogvl_cond_wait_cb, &arg, RUBY_UBF_PROCESS, 0);
 }

@@ -1,11 +1,17 @@
 #include "ilios.h"
 
-#define THREAD_PREPARE_MAX 10
-#define THREAD_EXECUTE_MAX 10
+#define THREAD_MAX 5
 
-uv_sem_t sem_thread_prepare;
-uv_sem_t sem_thread_execute;
+typedef struct
+{
+    VALUE thread[THREAD_MAX];
+    VALUE queue;
+} future_thread_pool;
 
+static future_thread_pool thread_pool_prepare;
+static future_thread_pool thread_pool_execute;
+
+static VALUE future_result_yielder_thread(void *arg);
 static void future_mark(void *ptr);
 static void future_destroy(void *ptr);
 static size_t future_memsize(const void *ptr);
@@ -24,28 +30,31 @@ const rb_data_type_t cassandra_future_data_type = {
     RUBY_TYPED_FREE_IMMEDIATELY | RUBY_TYPED_WB_PROTECTED | RUBY_TYPED_FROZEN_SHAREABLE,
 };
 
-static void future_sem_wait(CassandraFuture *cassandra_future)
+static void future_thread_pool_init(future_thread_pool *pool)
 {
-    switch (cassandra_future->kind) {
-    case prepare_async:
-        nogvl_sem_wait(&sem_thread_prepare);
-        break;
-    case execute_async:
-        nogvl_sem_wait(&sem_thread_execute);
-        break;
+    pool->queue = rb_funcall(cQueue, id_new, 0);
+    for (int i = 0; i < THREAD_MAX; i++) {
+        pool->thread[i] = rb_thread_create(future_result_yielder_thread, (void*)pool);
     }
 }
 
-static void future_sem_post(CassandraFuture *cassandra_future)
+static future_thread_pool *future_thread_pool_get(CassandraFuture *cassandra_future)
 {
-    switch (cassandra_future->kind) {
-    case prepare_async:
-        uv_sem_post(&sem_thread_prepare);
-        break;
-    case execute_async:
-        uv_sem_post(&sem_thread_execute);
-        break;
+    if (cassandra_future->kind == prepare_async) {
+        return &thread_pool_prepare;
+    } else {
+        return &thread_pool_execute;
     }
+}
+
+static void future_queue_push(future_thread_pool *pool, VALUE future)
+{
+    rb_funcall(pool->queue, id_push, 1, future);
+}
+
+static VALUE future_queue_pop(future_thread_pool *pool)
+{
+    return rb_funcall(pool->queue, id_pop, 0);
 }
 
 static void future_result_success_yield(CassandraFuture *cassandra_future)
@@ -125,13 +134,17 @@ static VALUE future_result_yielder_ensure(VALUE arg)
 
     GET_FUTURE(arg, cassandra_future);
     uv_mutex_unlock(&cassandra_future->proc_mutex);
-    future_sem_post(cassandra_future);
     return Qnil;
 }
 
 static VALUE future_result_yielder_thread(void *arg)
 {
-    rb_ensure(future_result_yielder, (VALUE)arg, future_result_yielder_ensure, (VALUE)arg);
+    future_thread_pool *pool = (future_thread_pool *)arg;
+
+    while (1) {
+        VALUE future = future_queue_pop(pool);
+        rb_ensure(future_result_yielder, (VALUE)future, future_result_yielder_ensure, (VALUE)future);
+    }
     return Qnil;
 }
 
@@ -148,11 +161,7 @@ static VALUE future_on_success_body(VALUE future)
             future_result_success_yield(cassandra_future);
         }
     } else {
-        if (!cassandra_future->thread_obj) {
-            future_sem_wait(cassandra_future);
-            cassandra_future->thread_obj = rb_thread_create(future_result_yielder_thread, (void*)future);
-            rb_funcall(cassandra_future->thread_obj, id_abort_on_exception_set, 1, Qtrue);
-        }
+        future_queue_push(future_thread_pool_get(cassandra_future), future);
     }
     return Qnil;
 }
@@ -168,10 +177,6 @@ static VALUE future_on_success_ensure(VALUE future)
 
 static VALUE future_on_success(VALUE self)
 {
-    CassandraFuture *cassandra_future;
-
-    GET_FUTURE(self, cassandra_future);
-
     if (rb_block_given_p()) {
         rb_ensure(future_on_success_body, self, future_on_success_ensure, self);
     }
@@ -191,11 +196,7 @@ static VALUE future_on_failure_body(VALUE future)
             future_result_failure_yield(cassandra_future);
         }
     } else {
-        if (!cassandra_future->thread_obj) {
-            future_sem_wait(cassandra_future);
-            cassandra_future->thread_obj = rb_thread_create(future_result_yielder_thread, (void*)future);
-            rb_funcall(cassandra_future->thread_obj, id_abort_on_exception_set, 1, Qtrue);
-        }
+        future_queue_push(future_thread_pool_get(cassandra_future), future);
     }
     return Qnil;
 }
@@ -211,10 +212,6 @@ static VALUE future_on_failure_ensure(VALUE future)
 
 static VALUE future_on_failure(VALUE self)
 {
-    CassandraFuture *cassandra_future;
-
-    GET_FUTURE(self, cassandra_future);
-
     if (rb_block_given_p()) {
         rb_ensure(future_on_failure_body, self, future_on_failure_ensure, self);
     }
@@ -254,6 +251,6 @@ void Init_future(void)
     rb_define_method(cFuture, "on_success", future_on_success, 0);
     rb_define_method(cFuture, "on_failure", future_on_failure, 0);
 
-    uv_sem_init(&sem_thread_prepare, THREAD_PREPARE_MAX);
-    uv_sem_init(&sem_thread_execute, THREAD_EXECUTE_MAX);
+    future_thread_pool_init(&thread_pool_prepare);
+    future_thread_pool_init(&thread_pool_execute);
 }

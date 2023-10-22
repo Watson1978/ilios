@@ -10,10 +10,15 @@ VALUE eConnectError;
 VALUE eExecutionError;
 VALUE eStatementError;
 
+VALUE cQueue;
+
 VALUE id_cvar_config;
 VALUE id_shuffle;
 VALUE id_to_time;
 VALUE id_abort_on_exception_set;
+VALUE id_new;
+VALUE id_push;
+VALUE id_pop;
 VALUE sym_unsupported_column_type;
 VALUE sym_keyspace;
 VALUE sym_hosts;
@@ -71,10 +76,15 @@ void Init_ilios(void)
     eExecutionError = rb_define_class_under(mCassandra, "ExecutionError", rb_eStandardError);
     eStatementError = rb_define_class_under(mCassandra, "StatementError", rb_eStandardError);
 
+    cQueue = rb_const_get(rb_cThread, rb_intern("Queue"));
+
     id_cvar_config = rb_intern("@@config");
     id_shuffle = rb_intern("shuffle");
     id_to_time = rb_intern("to_time");
     id_abort_on_exception_set = rb_intern("abort_on_exception=");
+    id_new = rb_intern("new");
+    id_push = rb_intern("push");
+    id_pop = rb_intern("pop");
     sym_unsupported_column_type = ID2SYM(rb_intern("unsupported_column_type"));
     sym_keyspace = ID2SYM(rb_intern("keyspace"));
     sym_hosts = ID2SYM(rb_intern("hosts"));

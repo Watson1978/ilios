@@ -79,10 +79,15 @@ extern VALUE eConnectError;
 extern VALUE eExecutionError;
 extern VALUE eStatementError;
 
+extern VALUE cQueue;
+
 extern VALUE id_cvar_config;
 extern VALUE id_shuffle;
 extern VALUE id_to_time;
 extern VALUE id_abort_on_exception_set;
+extern VALUE id_new;
+extern VALUE id_push;
+extern VALUE id_pop;
 extern VALUE sym_unsupported_column_type;
 extern VALUE sym_keyspace;
 extern VALUE sym_hosts;

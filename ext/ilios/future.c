@@ -1,34 +1,14 @@
 #include "ilios.h"
 
-#define THREAD_MAX 5
+#define THREAD_PREPARE_MAX 10
+#define THREAD_EXECUTE_MAX 10
 
-typedef struct
-{
-    uv_cond_t cond;
-    uv_mutex_t mutex;
-} future_thread_pool_condition;
-
-typedef struct
-{
-    future_thread_pool_condition condition[THREAD_MAX];
-    VALUE queue;
-    uv_mutex_t queue_mutex;
-    unsigned int current_number;
-} future_thread_pool;
-
-static future_thread_pool thread_prepare;
-static future_thread_pool thread_execute;
-
-typedef struct
-{
-    future_thread_pool *thread_pool;
-    unsigned int thread_number;
-} future_thread_arg;
+uv_sem_t sem_thread_prepare;
+uv_sem_t sem_thread_execute;
 
 static void future_mark(void *ptr);
 static void future_destroy(void *ptr);
 static size_t future_memsize(const void *ptr);
-static VALUE future_result_yielder_thread(void *arg);
 
 const rb_data_type_t cassandra_future_data_type = {
     "Ilios::Cassandra::Future",
@@ -44,63 +24,28 @@ const rb_data_type_t cassandra_future_data_type = {
     RUBY_TYPED_FREE_IMMEDIATELY | RUBY_TYPED_WB_PROTECTED | RUBY_TYPED_FROZEN_SHAREABLE,
 };
 
-
-static future_thread_pool *thread_for_future(CassandraFuture *cassandra_future)
+static void future_sem_wait(CassandraFuture *cassandra_future)
 {
     switch (cassandra_future->kind) {
     case prepare_async:
-        return &thread_prepare;
+        nogvl_sem_wait(&sem_thread_prepare);
+        break;
     case execute_async:
-        return &thread_execute;
+        nogvl_sem_wait(&sem_thread_execute);
+        break;
     }
 }
 
-static void future_thread_init(future_thread_pool *thread_pool)
+static void future_sem_post(CassandraFuture *cassandra_future)
 {
-    thread_pool->queue = rb_ary_new();
-    uv_mutex_init(&thread_pool->queue_mutex);
-    thread_pool->current_number = 0;
-
-    for (unsigned int i = 0; i < THREAD_MAX; i++) {
-        future_thread_arg *arg = malloc(sizeof(future_thread_arg));
-        arg->thread_pool = thread_pool;
-        arg->thread_number = i;
-
-        uv_cond_init(&thread_pool->condition[i].cond);
-        uv_mutex_init(&thread_pool->condition[i].mutex);
-        rb_thread_create(future_result_yielder_thread, (void*)arg);
+    switch (cassandra_future->kind) {
+    case prepare_async:
+        uv_sem_post(&sem_thread_prepare);
+        break;
+    case execute_async:
+        uv_sem_post(&sem_thread_execute);
+        break;
     }
-}
-
-static void future_thread_signal(future_thread_pool *thread_pool)
-{
-    nogvl_mutex_lock(&thread_pool->queue_mutex);
-    uv_cond_signal(&thread_pool->condition[thread_pool->current_number].cond);
-    thread_pool->current_number = (thread_pool->current_number + 1) % THREAD_MAX;
-    uv_mutex_unlock(&thread_pool->queue_mutex);
-}
-
-static void future_thread_wait(future_thread_pool *thread_pool, unsigned int number)
-{
-    nogvl_cond_wait(&thread_pool->condition[number].cond, &thread_pool->condition[number].mutex);
-}
-
-static void future_queue_push(future_thread_pool *thread_pool, VALUE future)
-{
-    nogvl_mutex_lock(&thread_pool->queue_mutex);
-    rb_ary_push(thread_pool->queue, future);
-    uv_mutex_unlock(&thread_pool->queue_mutex);
-}
-
-static VALUE future_queue_pop(future_thread_pool *thread_pool)
-{
-    VALUE future;
-
-    nogvl_mutex_lock(&thread_pool->queue_mutex);
-    future = rb_ary_pop(thread_pool->queue);
-    uv_mutex_unlock(&thread_pool->queue_mutex);
-
-    return future;
 }
 
 static void future_result_success_yield(CassandraFuture *cassandra_future)
@@ -180,22 +125,13 @@ static VALUE future_result_yielder_ensure(VALUE arg)
 
     GET_FUTURE(arg, cassandra_future);
     uv_mutex_unlock(&cassandra_future->proc_mutex);
+    future_sem_post(cassandra_future);
     return Qnil;
 }
 
 static VALUE future_result_yielder_thread(void *arg)
 {
-    future_thread_arg *thread_arg = (future_thread_arg *)arg;
-    VALUE future;
-
-    while (1) {
-        future_thread_wait(thread_arg->thread_pool, thread_arg->thread_number);
-        future = future_queue_pop(thread_arg->thread_pool);
-        rb_ensure(future_result_yielder, future, future_result_yielder_ensure, future);
-
-    }
-
-    free(arg);
+    rb_ensure(future_result_yielder, (VALUE)arg, future_result_yielder_ensure, (VALUE)arg);
     return Qnil;
 }
 
@@ -212,8 +148,11 @@ static VALUE future_on_success_body(VALUE future)
             future_result_success_yield(cassandra_future);
         }
     } else {
-        future_queue_push(thread_for_future(cassandra_future), future);
-        future_thread_signal(thread_for_future(cassandra_future));
+        if (!cassandra_future->thread_obj) {
+            future_sem_wait(cassandra_future);
+            cassandra_future->thread_obj = rb_thread_create(future_result_yielder_thread, (void*)future);
+            rb_funcall(cassandra_future->thread_obj, id_abort_on_exception_set, 1, Qtrue);
+        }
     }
     return Qnil;
 }
@@ -252,8 +191,11 @@ static VALUE future_on_failure_body(VALUE future)
             future_result_failure_yield(cassandra_future);
         }
     } else {
-        future_queue_push(thread_for_future(cassandra_future), future);
-        future_thread_signal(thread_for_future(cassandra_future));
+        if (!cassandra_future->thread_obj) {
+            future_sem_wait(cassandra_future);
+            cassandra_future->thread_obj = rb_thread_create(future_result_yielder_thread, (void*)future);
+            rb_funcall(cassandra_future->thread_obj, id_abort_on_exception_set, 1, Qtrue);
+        }
     }
     return Qnil;
 }
@@ -312,6 +254,6 @@ void Init_future(void)
     rb_define_method(cFuture, "on_success", future_on_success, 0);
     rb_define_method(cFuture, "on_failure", future_on_failure, 0);
 
-    future_thread_init(&thread_prepare);
-    future_thread_init(&thread_execute);
+    uv_sem_init(&sem_thread_prepare, THREAD_PREPARE_MAX);
+    uv_sem_init(&sem_thread_execute, THREAD_EXECUTE_MAX);
 }

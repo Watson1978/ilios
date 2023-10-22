@@ -23,11 +23,6 @@ unless File.exist?(LIBUV_INSTALL_PATH)
     def configure_prefix
       "-DCMAKE_INSTALL_PREFIX=#{LIBUV_INSTALL_PATH}"
     end
-
-    def configure_defaults
-      flags = super
-      flags << "-DCMAKE_BUILD_TYPE=Release"
-    end
   end
 
   libuv_recipe = LibuvRecipe.new("libuv", Ilios::LIBUV_VERSION, make_command: "make -j")
@@ -54,11 +49,6 @@ unless File.exist?(CASSANDRA_CPP_DRIVER_INSTALL_PATH)
     end
     def configure_prefix
       "-DCMAKE_INSTALL_PREFIX=#{CASSANDRA_CPP_DRIVER_INSTALL_PATH}"
-    end
-
-    def configure_defaults
-      flags = super
-      flags << "-DCMAKE_BUILD_TYPE=Release"
     end
   end
 

@@ -156,12 +156,14 @@ static VALUE future_on_success_body(VALUE future)
     rb_mutex_lock(cassandra_future->proc_mutex);
 
     cassandra_future->on_success_block = rb_block_proc();
-    if (cass_future_ready(cassandra_future->future) && cassandra_future->proc_state == initial) {
-        if (cass_future_error_code(cassandra_future->future) == CASS_OK) {
-            future_result_success_yield(cassandra_future);
+    if (cassandra_future->proc_state == initial) {
+        if (cass_future_ready(cassandra_future->future)) {
+            if (cass_future_error_code(cassandra_future->future) == CASS_OK) {
+                future_result_success_yield(cassandra_future);
+            }
+        } else {
+            future_queue_push(future_thread_pool_get(cassandra_future), future);
         }
-    } else {
-        future_queue_push(future_thread_pool_get(cassandra_future), future);
     }
     return Qnil;
 }
@@ -191,12 +193,14 @@ static VALUE future_on_failure_body(VALUE future)
     rb_mutex_lock(cassandra_future->proc_mutex);
 
     cassandra_future->on_failure_block = rb_block_proc();
-    if (cass_future_ready(cassandra_future->future) && cassandra_future->proc_state == initial) {
-        if (cass_future_error_code(cassandra_future->future) != CASS_OK) {
-            future_result_failure_yield(cassandra_future);
+    if (cassandra_future->proc_state == initial) {
+        if (cass_future_ready(cassandra_future->future)) {
+            if (cass_future_error_code(cassandra_future->future) != CASS_OK) {
+                future_result_failure_yield(cassandra_future);
+            }
+        } else {
+            future_queue_push(future_thread_pool_get(cassandra_future), future);
         }
-    } else {
-        future_queue_push(future_thread_pool_get(cassandra_future), future);
     }
     return Qnil;
 }

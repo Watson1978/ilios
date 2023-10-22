@@ -223,7 +223,6 @@ static void future_mark(void *ptr)
     CassandraFuture *cassandra_future = (CassandraFuture *)ptr;
     rb_gc_mark(cassandra_future->session_obj);
     rb_gc_mark(cassandra_future->statement_obj);
-    rb_gc_mark(cassandra_future->thread_obj);
     rb_gc_mark(cassandra_future->on_success_block);
     rb_gc_mark(cassandra_future->on_failure_block);
     rb_gc_mark(cassandra_future->proc_mutex);

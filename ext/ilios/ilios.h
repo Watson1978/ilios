@@ -56,7 +56,6 @@ typedef struct
 
     VALUE session_obj;
     VALUE statement_obj;
-    VALUE thread_obj;
     VALUE on_success_block;
     VALUE on_failure_block;
 

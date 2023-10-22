@@ -116,7 +116,7 @@ static VALUE future_result_yielder(VALUE arg)
     CassandraFuture *cassandra_future;
 
     GET_FUTURE(arg, cassandra_future);
-    nogvl_mutex_lock(&cassandra_future->proc_mutex);
+    rb_mutex_lock(cassandra_future->proc_mutex);
 
     nogvl_future_wait(cassandra_future->future);
 
@@ -133,7 +133,7 @@ static VALUE future_result_yielder_ensure(VALUE arg)
     CassandraFuture *cassandra_future;
 
     GET_FUTURE(arg, cassandra_future);
-    uv_mutex_unlock(&cassandra_future->proc_mutex);
+    rb_mutex_unlock(cassandra_future->proc_mutex);
     return Qnil;
 }
 
@@ -153,7 +153,7 @@ static VALUE future_on_success_body(VALUE future)
     CassandraFuture *cassandra_future;
 
     GET_FUTURE(future, cassandra_future);
-    nogvl_mutex_lock(&cassandra_future->proc_mutex);
+    rb_mutex_lock(cassandra_future->proc_mutex);
 
     cassandra_future->on_success_block = rb_block_proc();
     if (cass_future_ready(cassandra_future->future) && cassandra_future->proc_state == initial) {
@@ -171,7 +171,7 @@ static VALUE future_on_success_ensure(VALUE future)
     CassandraFuture *cassandra_future;
 
     GET_FUTURE(future, cassandra_future);
-    uv_mutex_unlock(&cassandra_future->proc_mutex);
+    rb_mutex_unlock(cassandra_future->proc_mutex);
     return Qnil;
 }
 
@@ -188,7 +188,7 @@ static VALUE future_on_failure_body(VALUE future)
     CassandraFuture *cassandra_future;
 
     GET_FUTURE(future, cassandra_future);
-    nogvl_mutex_lock(&cassandra_future->proc_mutex);
+    rb_mutex_lock(cassandra_future->proc_mutex);
 
     cassandra_future->on_failure_block = rb_block_proc();
     if (cass_future_ready(cassandra_future->future) && cassandra_future->proc_state == initial) {
@@ -206,7 +206,7 @@ static VALUE future_on_failure_ensure(VALUE future)
     CassandraFuture *cassandra_future;
 
     GET_FUTURE(future, cassandra_future);
-    uv_mutex_unlock(&cassandra_future->proc_mutex);
+    rb_mutex_unlock(cassandra_future->proc_mutex);
     return Qnil;
 }
 
@@ -226,6 +226,7 @@ static void future_mark(void *ptr)
     rb_gc_mark(cassandra_future->thread_obj);
     rb_gc_mark(cassandra_future->on_success_block);
     rb_gc_mark(cassandra_future->on_failure_block);
+    rb_gc_mark(cassandra_future->proc_mutex);
 }
 
 static void future_destroy(void *ptr)
@@ -235,7 +236,6 @@ static void future_destroy(void *ptr)
     if (cassandra_future->future) {
         cass_future_free(cassandra_future->future);
     }
-    uv_mutex_destroy(&cassandra_future->proc_mutex);
     xfree(cassandra_future);
 }
 

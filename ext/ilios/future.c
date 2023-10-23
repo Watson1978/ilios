@@ -147,13 +147,29 @@ static VALUE future_result_yielder_thread(void *arg)
 static VALUE future_on_success(VALUE self)
 {
     CassandraFuture *cassandra_future;
+    bool wakeup_thread = false;
 
     GET_FUTURE(self, cassandra_future);
 
     if (rb_block_given_p()) {
         rb_mutex_lock(cassandra_future->proc_mutex);
-        if (!cassandra_future->on_success_block) {
-            cassandra_future->on_success_block = rb_block_proc();
+
+        if (!(cassandra_future->on_success_block || cassandra_future->on_failure_block)) {
+            // Invoke the callback with thread pool only once
+            wakeup_thread = true;
+        }
+
+        cassandra_future->on_success_block = rb_block_proc();
+
+        if (cass_future_ready(cassandra_future->future)) {
+            rb_mutex_unlock(cassandra_future->proc_mutex);
+            if (cass_future_error_code(cassandra_future->future) == CASS_OK) {
+                future_result_success_yield(cassandra_future);
+            }
+            return self;
+        }
+
+        if (wakeup_thread) {
             future_queue_push(future_thread_pool_get(cassandra_future), self);
         }
         rb_mutex_unlock(cassandra_future->proc_mutex);
@@ -164,13 +180,29 @@ static VALUE future_on_success(VALUE self)
 static VALUE future_on_failure(VALUE self)
 {
     CassandraFuture *cassandra_future;
+    bool wakeup_thread = false;
 
     GET_FUTURE(self, cassandra_future);
 
     if (rb_block_given_p()) {
         rb_mutex_lock(cassandra_future->proc_mutex);
-        if (!cassandra_future->on_failure_block) {
-            cassandra_future->on_failure_block = rb_block_proc();
+
+        if (!(cassandra_future->on_success_block || cassandra_future->on_failure_block)) {
+            // Invoke the callback with thread pool only once
+            wakeup_thread = true;
+        }
+
+        cassandra_future->on_failure_block = rb_block_proc();
+
+        if (cass_future_ready(cassandra_future->future)) {
+            rb_mutex_unlock(cassandra_future->proc_mutex);
+            if (cass_future_error_code(cassandra_future->future) != CASS_OK) {
+                future_result_failure_yield(cassandra_future);
+            }
+            return self;
+        }
+
+        if (wakeup_thread) {
             future_queue_push(future_thread_pool_get(cassandra_future), self);
         }
         rb_mutex_unlock(cassandra_future->proc_mutex);

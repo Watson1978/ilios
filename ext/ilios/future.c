@@ -38,7 +38,7 @@ static void future_thread_pool_init(future_thread_pool *pool)
     }
 }
 
-static future_thread_pool *future_thread_pool_get(CassandraFuture *cassandra_future)
+static inline future_thread_pool *future_thread_pool_get(CassandraFuture *cassandra_future)
 {
     future_thread_pool *pool = NULL;
 
@@ -53,12 +53,12 @@ static future_thread_pool *future_thread_pool_get(CassandraFuture *cassandra_fut
     return pool;
 }
 
-static void future_queue_push(future_thread_pool *pool, VALUE future)
+static inline void future_queue_push(future_thread_pool *pool, VALUE future)
 {
     rb_funcall(pool->queue, id_push, 1, future);
 }
 
-static VALUE future_queue_pop(future_thread_pool *pool)
+static inline VALUE future_queue_pop(future_thread_pool *pool)
 {
     return rb_funcall(pool->queue, id_pop, 0);
 }

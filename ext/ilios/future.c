@@ -40,11 +40,17 @@ static void future_thread_pool_init(future_thread_pool *pool)
 
 static future_thread_pool *future_thread_pool_get(CassandraFuture *cassandra_future)
 {
-    if (cassandra_future->kind == prepare_async) {
-        return &thread_pool_prepare;
-    } else {
-        return &thread_pool_execute;
+    future_thread_pool *pool = NULL;
+
+    switch (cassandra_future->kind) {
+    case prepare_async:
+        pool = &thread_pool_prepare;
+        break;
+    case execute_async:
+        pool = &thread_pool_execute;
+        break;
     }
+    return pool;
 }
 
 static void future_queue_push(future_thread_pool *pool, VALUE future)

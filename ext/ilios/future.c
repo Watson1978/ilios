@@ -59,11 +59,9 @@ static VALUE future_queue_pop(future_thread_pool *pool)
 
 static void future_result_success_yield(CassandraFuture *cassandra_future)
 {
+    VALUE obj;
+
     if (cassandra_future->on_success_block) {
-        VALUE obj;
-
-        cassandra_future->proc_state = invoked;
-
         if (rb_proc_arity(cassandra_future->on_success_block)) {
             switch (cassandra_future->kind) {
             case prepare_async:
@@ -105,8 +103,6 @@ static void future_result_success_yield(CassandraFuture *cassandra_future)
 static void future_result_failure_yield(CassandraFuture *cassandra_future)
 {
     if (cassandra_future->on_failure_block) {
-        cassandra_future->proc_state = invoked;
-
         rb_proc_call_with_block(cassandra_future->on_failure_block, 0, NULL, Qnil);
     }
 }
@@ -148,76 +144,36 @@ static VALUE future_result_yielder_thread(void *arg)
     return Qnil;
 }
 
-static VALUE future_on_success_body(VALUE future)
-{
-    CassandraFuture *cassandra_future;
-
-    GET_FUTURE(future, cassandra_future);
-    rb_mutex_lock(cassandra_future->proc_mutex);
-
-    cassandra_future->on_success_block = rb_block_proc();
-    if (cassandra_future->proc_state == initial) {
-        if (cass_future_ready(cassandra_future->future)) {
-            if (cass_future_error_code(cassandra_future->future) == CASS_OK) {
-                future_result_success_yield(cassandra_future);
-            }
-        } else {
-            future_queue_push(future_thread_pool_get(cassandra_future), future);
-        }
-    }
-    return Qnil;
-}
-
-static VALUE future_on_success_ensure(VALUE future)
-{
-    CassandraFuture *cassandra_future;
-
-    GET_FUTURE(future, cassandra_future);
-    rb_mutex_unlock(cassandra_future->proc_mutex);
-    return Qnil;
-}
-
 static VALUE future_on_success(VALUE self)
 {
+    CassandraFuture *cassandra_future;
+
+    GET_FUTURE(self, cassandra_future);
+
     if (rb_block_given_p()) {
-        rb_ensure(future_on_success_body, self, future_on_success_ensure, self);
+        rb_mutex_lock(cassandra_future->proc_mutex);
+        if (!cassandra_future->on_success_block) {
+            cassandra_future->on_success_block = rb_block_proc();
+            future_queue_push(future_thread_pool_get(cassandra_future), self);
+        }
+        rb_mutex_unlock(cassandra_future->proc_mutex);
     }
     return self;
 }
 
-static VALUE future_on_failure_body(VALUE future)
-{
-    CassandraFuture *cassandra_future;
-
-    GET_FUTURE(future, cassandra_future);
-    rb_mutex_lock(cassandra_future->proc_mutex);
-
-    cassandra_future->on_failure_block = rb_block_proc();
-    if (cassandra_future->proc_state == initial) {
-        if (cass_future_ready(cassandra_future->future)) {
-            if (cass_future_error_code(cassandra_future->future) != CASS_OK) {
-                future_result_failure_yield(cassandra_future);
-            }
-        } else {
-            future_queue_push(future_thread_pool_get(cassandra_future), future);
-        }
-    }
-    return Qnil;
-}
-
-static VALUE future_on_failure_ensure(VALUE future)
-{
-    CassandraFuture *cassandra_future;
-
-    GET_FUTURE(future, cassandra_future);
-    rb_mutex_unlock(cassandra_future->proc_mutex);
-    return Qnil;
-}
-
 static VALUE future_on_failure(VALUE self)
 {
+    CassandraFuture *cassandra_future;
+
+    GET_FUTURE(self, cassandra_future);
+
     if (rb_block_given_p()) {
-        rb_ensure(future_on_failure_body, self, future_on_failure_ensure, self);
+        rb_mutex_lock(cassandra_future->proc_mutex);
+        if (!cassandra_future->on_failure_block) {
+            cassandra_future->on_failure_block = rb_block_proc();
+            future_queue_push(future_thread_pool_get(cassandra_future), self);
+        }
+        rb_mutex_unlock(cassandra_future->proc_mutex);
     }
     return self;
 }

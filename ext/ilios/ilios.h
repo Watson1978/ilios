@@ -22,11 +22,6 @@ typedef enum {
   execute_async
 } future_kind;
 
-typedef enum {
-  initial,
-  invoked
-} future_proc_state;
-
 typedef struct
 {
     CassCluster* cluster;
@@ -58,8 +53,6 @@ typedef struct
     VALUE statement_obj;
     VALUE on_success_block;
     VALUE on_failure_block;
-
-    future_proc_state proc_state;
     VALUE proc_mutex;
 } CassandraFuture;
 

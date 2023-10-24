@@ -155,10 +155,14 @@ static VALUE future_on_success(VALUE self)
 
     GET_FUTURE(self, cassandra_future);
 
+    if (cassandra_future->on_success_block) {
+        rb_raise(eExecutionError, "It should not call twice");
+    }
+
     if (rb_block_given_p()) {
         rb_mutex_lock(cassandra_future->proc_mutex);
 
-        if (!(cassandra_future->on_success_block || cassandra_future->on_failure_block)) {
+        if (!cassandra_future->on_failure_block) {
             // Invoke the callback with thread pool only once
             wakeup_thread = true;
         }
@@ -188,10 +192,14 @@ static VALUE future_on_failure(VALUE self)
 
     GET_FUTURE(self, cassandra_future);
 
+    if (cassandra_future->on_failure_block) {
+        rb_raise(eExecutionError, "It should not call twice");
+    }
+
     if (rb_block_given_p()) {
         rb_mutex_lock(cassandra_future->proc_mutex);
 
-        if (!(cassandra_future->on_success_block || cassandra_future->on_failure_block)) {
+        if (!cassandra_future->on_success_block) {
             // Invoke the callback with thread pool only once
             wakeup_thread = true;
         }

@@ -51,9 +51,6 @@ typedef struct
 
     VALUE session_obj;
     VALUE statement_obj;
-    VALUE on_success_block;
-    VALUE on_failure_block;
-    VALUE proc_mutex;
 } CassandraFuture;
 
 extern const rb_data_type_t cassandra_session_data_type;

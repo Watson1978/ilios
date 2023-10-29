@@ -15,6 +15,7 @@ static VALUE future_result_yielder_thread(void *arg);
 static void future_mark(void *ptr);
 static void future_destroy(void *ptr);
 static size_t future_memsize(const void *ptr);
+static void future_compact(void *ptr);
 
 const rb_data_type_t cassandra_future_data_type = {
     "Ilios::Cassandra::Future",
@@ -22,9 +23,7 @@ const rb_data_type_t cassandra_future_data_type = {
         future_mark,
         future_destroy,
         future_memsize,
-#ifdef HAVE_RB_GC_MARK_MOVABLE
-        NULL,
-#endif
+        future_compact,
     },
     0, 0,
     RUBY_TYPED_FREE_IMMEDIATELY | RUBY_TYPED_WB_PROTECTED | RUBY_TYPED_FROZEN_SHAREABLE,
@@ -225,11 +224,11 @@ static VALUE future_on_failure(VALUE self)
 static void future_mark(void *ptr)
 {
     CassandraFuture *cassandra_future = (CassandraFuture *)ptr;
-    rb_gc_mark(cassandra_future->session_obj);
-    rb_gc_mark(cassandra_future->statement_obj);
-    rb_gc_mark(cassandra_future->on_success_block);
-    rb_gc_mark(cassandra_future->on_failure_block);
-    rb_gc_mark(cassandra_future->proc_mutex);
+    rb_gc_mark_movable(cassandra_future->session_obj);
+    rb_gc_mark_movable(cassandra_future->statement_obj);
+    rb_gc_mark_movable(cassandra_future->on_success_block);
+    rb_gc_mark_movable(cassandra_future->on_failure_block);
+    rb_gc_mark_movable(cassandra_future->proc_mutex);
 }
 
 static void future_destroy(void *ptr)
@@ -245,6 +244,17 @@ static void future_destroy(void *ptr)
 static size_t future_memsize(const void *ptr)
 {
     return sizeof(CassandraFuture);
+}
+
+static void future_compact(void *ptr)
+{
+    CassandraFuture *cassandra_future = (CassandraFuture *)ptr;
+
+    cassandra_future->session_obj = rb_gc_location(cassandra_future->session_obj);
+    cassandra_future->statement_obj = rb_gc_location(cassandra_future->statement_obj);
+    cassandra_future->on_success_block = rb_gc_location(cassandra_future->on_success_block);
+    cassandra_future->on_failure_block = rb_gc_location(cassandra_future->on_failure_block);
+    cassandra_future->proc_mutex = rb_gc_location(cassandra_future->proc_mutex);
 }
 
 void Init_future(void)

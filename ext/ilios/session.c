@@ -9,9 +9,7 @@ const rb_data_type_t cassandra_session_data_type = {
         NULL,
         session_destroy,
         session_memsize,
-#ifdef HAVE_RB_GC_MARK_MOVABLE
         NULL,
-#endif
     },
     0, 0,
     RUBY_TYPED_FREE_IMMEDIATELY | RUBY_TYPED_WB_PROTECTED | RUBY_TYPED_FROZEN_SHAREABLE,

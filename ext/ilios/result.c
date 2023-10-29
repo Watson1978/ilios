@@ -3,6 +3,7 @@
 static void result_mark(void *ptr);
 static void result_destroy(void *ptr);
 static size_t result_memsize(const void *ptr);
+static void result_compact(void *ptr);
 
 const rb_data_type_t cassandra_result_data_type = {
     "Ilios::Cassandra::Result",
@@ -10,9 +11,7 @@ const rb_data_type_t cassandra_result_data_type = {
         result_mark,
         result_destroy,
         result_memsize,
-#ifdef HAVE_RB_GC_MARK_MOVABLE
-        NULL,
-#endif
+        result_compact,
     },
     0, 0,
     RUBY_TYPED_FREE_IMMEDIATELY | RUBY_TYPED_WB_PROTECTED | RUBY_TYPED_FROZEN_SHAREABLE,
@@ -195,7 +194,7 @@ static VALUE result_each(VALUE self)
 static void result_mark(void *ptr)
 {
     CassandraResult *cassandra_result = (CassandraResult *)ptr;
-    rb_gc_mark(cassandra_result->statement_obj);
+    rb_gc_mark_movable(cassandra_result->statement_obj);
 }
 
 static void result_destroy(void *ptr)
@@ -214,6 +213,13 @@ static void result_destroy(void *ptr)
 static size_t result_memsize(const void *ptr)
 {
     return sizeof(CassandraResult);
+}
+
+static void result_compact(void *ptr)
+{
+    CassandraResult *cassandra_result = (CassandraResult *)ptr;
+
+    cassandra_result->statement_obj = rb_gc_location(cassandra_result->statement_obj);
 }
 
 void Init_result(void)

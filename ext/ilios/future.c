@@ -82,6 +82,10 @@ static VALUE future_result_failure_yield(RB_BLOCK_CALL_FUNC_ARGLIST(_, future))
 
 static VALUE future_on_success(VALUE self)
 {
+    CassandraFuture *cassandra_future;
+
+    GET_FUTURE(self, cassandra_future);
+
     if (rb_block_given_p()) {
         VALUE fiber = rb_fiber_new(future_result_success_yield, self);
         VALUE result = rb_fiber_resume(fiber, 0, NULL);
@@ -92,6 +96,10 @@ static VALUE future_on_success(VALUE self)
 
 static VALUE future_on_failure(VALUE self)
 {
+    CassandraFuture *cassandra_future;
+
+    GET_FUTURE(self, cassandra_future);
+
     if (rb_block_given_p()) {
         VALUE fiber = rb_fiber_new(future_result_failure_yield, self);
         if (RTEST(rb_fiber_resume(fiber, 0, NULL))) {

@@ -3,7 +3,6 @@
 static void statement_mark(void *ptr);
 static void statement_destroy(void *ptr);
 static size_t statement_memsize(const void *ptr);
-static void statement_compact(void *ptr);
 
 const rb_data_type_t cassandra_statement_data_type = {
     "Ilios::Cassandra::Statement",
@@ -11,7 +10,9 @@ const rb_data_type_t cassandra_statement_data_type = {
         statement_mark,
         statement_destroy,
         statement_memsize,
-        statement_compact,
+#ifdef HAVE_RB_GC_MARK_MOVABLE
+        NULL,
+#endif
     },
     0, 0,
     RUBY_TYPED_FREE_IMMEDIATELY | RUBY_TYPED_WB_PROTECTED | RUBY_TYPED_FROZEN_SHAREABLE,
@@ -340,7 +341,7 @@ static VALUE statement_page_size(VALUE self, VALUE page_size)
 static void statement_mark(void *ptr)
 {
     CassandraStatement *cassandra_statement = (CassandraStatement *)ptr;
-    rb_gc_mark_movable(cassandra_statement->session_obj);
+    rb_gc_mark(cassandra_statement->session_obj);
 }
 
 static void statement_destroy(void *ptr)
@@ -360,14 +361,6 @@ static size_t statement_memsize(const void *ptr)
 {
     return sizeof(CassandraStatement);
 }
-
-static void statement_compact(void *ptr)
-{
-    CassandraStatement *cassandra_statement = (CassandraStatement *)ptr;
-
-    cassandra_statement->session_obj = rb_gc_location(cassandra_statement->session_obj);
-}
-
 
 void Init_statement(void)
 {

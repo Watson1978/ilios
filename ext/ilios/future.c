@@ -3,7 +3,6 @@
 static void future_mark(void *ptr);
 static void future_destroy(void *ptr);
 static size_t future_memsize(const void *ptr);
-static void future_compact(void *ptr);
 
 const rb_data_type_t cassandra_future_data_type = {
     "Ilios::Cassandra::Future",
@@ -11,7 +10,9 @@ const rb_data_type_t cassandra_future_data_type = {
         future_mark,
         future_destroy,
         future_memsize,
-        future_compact,
+#ifdef HAVE_RB_GC_MARK_MOVABLE
+        NULL,
+#endif
     },
     0, 0,
     RUBY_TYPED_FREE_IMMEDIATELY | RUBY_TYPED_WB_PROTECTED | RUBY_TYPED_FROZEN_SHAREABLE,
@@ -112,8 +113,8 @@ static VALUE future_on_failure(VALUE self)
 static void future_mark(void *ptr)
 {
     CassandraFuture *cassandra_future = (CassandraFuture *)ptr;
-    rb_gc_mark_movable(cassandra_future->session_obj);
-    rb_gc_mark_movable(cassandra_future->statement_obj);
+    rb_gc_mark(cassandra_future->session_obj);
+    rb_gc_mark(cassandra_future->statement_obj);
 }
 
 static void future_destroy(void *ptr)
@@ -129,14 +130,6 @@ static void future_destroy(void *ptr)
 static size_t future_memsize(const void *ptr)
 {
     return sizeof(CassandraFuture);
-}
-
-static void future_compact(void *ptr)
-{
-    CassandraFuture *cassandra_future = (CassandraFuture *)ptr;
-
-    cassandra_future->session_obj = rb_gc_location(cassandra_future->session_obj);
-    cassandra_future->statement_obj = rb_gc_location(cassandra_future->statement_obj);
 }
 
 void Init_future(void)

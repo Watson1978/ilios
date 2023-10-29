@@ -27,38 +27,34 @@ static VALUE future_result_success_yield(RB_BLOCK_CALL_FUNC_ARGLIST(_, future))
     nogvl_future_wait(cassandra_future->future);
 
     if (cass_future_error_code(cassandra_future->future) == CASS_OK) {
-        VALUE on_success_block = rb_block_proc();
+        switch (cassandra_future->kind) {
+        case prepare_async:
+            {
+                CassandraStatement *cassandra_statement;
+                VALUE cassandra_statement_obj;
 
-        if (rb_proc_arity(on_success_block)) {
-            switch (cassandra_future->kind) {
-            case prepare_async:
-                {
-                    CassandraStatement *cassandra_statement;
-                    VALUE cassandra_statement_obj;
+                cassandra_statement_obj = CREATE_STATEMENT(cassandra_statement);
+                cassandra_statement->prepared = cass_future_get_prepared(cassandra_future->future);
+                cassandra_statement->statement = cass_prepared_bind(cassandra_statement->prepared);
+                cassandra_statement->session_obj = cassandra_future->session_obj;
 
-                    cassandra_statement_obj = CREATE_STATEMENT(cassandra_statement);
-                    cassandra_statement->prepared = cass_future_get_prepared(cassandra_future->future);
-                    cassandra_statement->statement = cass_prepared_bind(cassandra_statement->prepared);
-                    cassandra_statement->session_obj = cassandra_future->session_obj;
+                statement_default_config(cassandra_statement);
 
-                    statement_default_config(cassandra_statement);
-
-                    obj = cassandra_statement_obj;
-                }
-                break;
-            case execute_async:
-                {
-                    CassandraResult *cassandra_result;
-                    VALUE cassandra_result_obj;
-
-                    cassandra_result_obj = CREATE_RESULT(cassandra_result);
-                    cassandra_result->result = cass_future_get_result(cassandra_future->future);
-                    cassandra_result->statement_obj = cassandra_future->statement_obj;
-
-                    obj = cassandra_result_obj;
-                }
-                break;
+                obj = cassandra_statement_obj;
             }
+            break;
+        case execute_async:
+            {
+                CassandraResult *cassandra_result;
+                VALUE cassandra_result_obj;
+
+                cassandra_result_obj = CREATE_RESULT(cassandra_result);
+                cassandra_result->result = cass_future_get_result(cassandra_future->future);
+                cassandra_result->statement_obj = cassandra_future->statement_obj;
+
+                obj = cassandra_result_obj;
+            }
+            break;
         }
     }
     rb_fiber_yield(1, &obj);
@@ -85,7 +81,9 @@ static VALUE future_on_success(VALUE self)
     if (rb_block_given_p()) {
         VALUE fiber = rb_fiber_new(future_result_success_yield, self);
         VALUE result = rb_fiber_resume(fiber, 0, NULL);
-        rb_yield(result);
+        if (!NIL_P(result)) {
+            rb_yield(result);
+        }
     }
     return self;
 }

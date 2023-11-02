@@ -1,0 +1,20 @@
+version: '3'
+services:
+  cassandra:
+    image: cassandra:4
+    ports:
+    - 9042:9042
+    volumes:
+    - cassandra-data:/var/lib/cassandra
+  ilios:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+    - cassandra
+    command: bash -c 'sleep infinity'
+    volumes:
+    - "./:/opt/ilios"
+volumes:
+  cassandra-data:
+    driver: local

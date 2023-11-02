@@ -19,6 +19,16 @@ $ gem install ilios
 ## Example
 ### Basic usage
 
+Create the keyspace in advance using the `cqlsh` command.
+
+```sh
+CREATE KEYSPACE IF NOT EXISTS ilios
+WITH REPLICATION = {
+  'class' : 'SimpleStrategy',
+  'replication_factor' : 1
+};
+```
+
 ```ruby
 require 'ilios'
 
@@ -26,16 +36,6 @@ Ilios::Cassandra.config = {
   keyspace: 'ilios',
   hosts: ['127.0.0.1'],
 }
-
-# Create the keyspace
-statement = Ilios::Cassandra.session.prepare(<<~CQL)
-  CREATE KEYSPACE IF NOT EXISTS ilios
-  WITH REPLICATION = {
-  'class' : 'SimpleStrategy',
-  'replication_factor' : 1
-  };
-CQL
-Ilios::Cassandra.session.execute(statement)
 
 # Create the table
 statement = Ilios::Cassandra.session.prepare(<<~CQL)

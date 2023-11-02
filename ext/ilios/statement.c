@@ -41,14 +41,14 @@ static VALUE statement_bind_tinyint(VALUE self, VALUE idx, VALUE value)
 {
     CassandraStatement *cassandra_statement;
     CassError result;
-    int v = NUM2INT(value);
+    long v = NUM2LONG(value);
 
     if (v < INT8_MIN || v > INT8_MAX) {
-        rb_raise(eStatementError, "Invalid value: %d", v);
+        rb_raise(eStatementError, "Invalid value: %ld", v);
     }
 
     GET_STATEMENT(self, cassandra_statement);
-    result = cass_statement_bind_int8(cassandra_statement->statement, NUM2LONG(idx), v);
+    result = cass_statement_bind_int8(cassandra_statement->statement, NUM2LONG(idx), (cass_int8_t)v);
     if (result != CASS_OK) {
         rb_raise(eStatementError, "Failed to bind value: %s", cass_error_desc(result));
     }
@@ -59,14 +59,14 @@ static VALUE statement_bind_smallint(VALUE self, VALUE idx, VALUE value)
 {
     CassandraStatement *cassandra_statement;
     CassError result;
-    int v = NUM2INT(value);
+    long v = NUM2LONG(value);
 
     if (v < INT16_MIN || v > INT16_MAX) {
-        rb_raise(eStatementError, "Invalid value: %d", v);
+        rb_raise(eStatementError, "Invalid value: %ld", v);
     }
 
     GET_STATEMENT(self, cassandra_statement);
-    result = cass_statement_bind_int16(cassandra_statement->statement, NUM2LONG(idx), v);
+    result = cass_statement_bind_int16(cassandra_statement->statement, NUM2LONG(idx), (cass_int16_t)v);
     if (result != CASS_OK) {
         rb_raise(eStatementError, "Failed to bind value: %s", cass_error_desc(result));
     }
@@ -77,14 +77,14 @@ static VALUE statement_bind_int(VALUE self, VALUE idx, VALUE value)
 {
     CassandraStatement *cassandra_statement;
     CassError result;
-    int v = NUM2INT(value);
+    long v = NUM2LONG(value);
 
     if (v < INT32_MIN || v > INT32_MAX) {
-        rb_raise(eStatementError, "Invalid value: %d", v);
+        rb_raise(eStatementError, "Invalid value: %ld", v);
     }
 
     GET_STATEMENT(self, cassandra_statement);
-    result = cass_statement_bind_int32(cassandra_statement->statement, NUM2LONG(idx), v);
+    result = cass_statement_bind_int32(cassandra_statement->statement, NUM2LONG(idx), (cass_int32_t)v);
     if (result != CASS_OK) {
         rb_raise(eStatementError, "Failed to bind value: %s", cass_error_desc(result));
     }
@@ -168,7 +168,11 @@ static VALUE statement_bind_timestamp(VALUE self, VALUE idx, VALUE value)
     CassError result;
 
     if (rb_obj_class(value) != rb_cTime) {
-        value = rb_funcall(value, id_to_time, 0);
+        if (rb_respond_to(value, id_to_time)) {
+            value = rb_funcall(value, id_to_time, 0);
+        } else {
+            rb_raise(rb_eTypeError, "no implicit conversion of %"PRIsVALUE" to Time", rb_obj_class(value));
+        }
     }
 
     GET_STATEMENT(self, cassandra_statement);
@@ -210,7 +214,7 @@ static int hash_cb(VALUE key, VALUE value, VALUE statement)
 
     data_type = cass_prepared_parameter_data_type_by_name(cassandra_statement->prepared, name);
     if (data_type == NULL) {
-        rb_raise(eStatementError, "Invalid name %s wag given.", name);
+        rb_raise(eStatementError, "Invalid name %s was given.", name);
     }
     value_type = cass_data_type_type(data_type);
 
@@ -222,36 +226,36 @@ static int hash_cb(VALUE key, VALUE value, VALUE statement)
     switch (value_type) {
     case CASS_VALUE_TYPE_TINY_INT:
         {
-            int v = NUM2INT(value);
+            long v = NUM2LONG(value);
 
             if (v < INT8_MIN || v > INT8_MAX) {
-                rb_raise(eStatementError, "Invalid value: %d", v);
+                rb_raise(eStatementError, "Invalid value: %ld", v);
             }
-            result = cass_statement_bind_int8_by_name(cassandra_statement->statement, name, v);
+            result = cass_statement_bind_int8_by_name(cassandra_statement->statement, name, (cass_int8_t)v);
         }
         break;
 
     case CASS_VALUE_TYPE_SMALL_INT:
         {
-            int v = NUM2INT(value);
+            long v = NUM2LONG(value);
 
             if (v < INT16_MIN || v > INT16_MAX) {
-                rb_raise(eStatementError, "Invalid value: %d", v);
+                rb_raise(eStatementError, "Invalid value: %ld", v);
             }
 
-            result = cass_statement_bind_int16_by_name(cassandra_statement->statement, name, v);
+            result = cass_statement_bind_int16_by_name(cassandra_statement->statement, name, (cass_int16_t)v);
         }
         break;
 
     case CASS_VALUE_TYPE_INT:
         {
-            int v = NUM2INT(value);
+            long v = NUM2LONG(value);
 
             if (v < INT32_MIN || v > INT32_MAX) {
-                rb_raise(eStatementError, "Invalid value: %d", v);
+                rb_raise(eStatementError, "Invalid value: %ld", v);
             }
 
-            result = cass_statement_bind_int32_by_name(cassandra_statement->statement, name, v);
+            result = cass_statement_bind_int32_by_name(cassandra_statement->statement, name, (cass_int32_t)v);
         }
         break;
 
@@ -290,7 +294,11 @@ static int hash_cb(VALUE key, VALUE value, VALUE statement)
 
     case CASS_VALUE_TYPE_TIMESTAMP:
         if (rb_obj_class(value) != rb_cTime) {
-            value = rb_funcall(value, id_to_time, 0);
+            if (rb_respond_to(value, id_to_time)) {
+                value = rb_funcall(value, id_to_time, 0);
+            } else {
+                rb_raise(rb_eTypeError, "no implicit conversion of %"PRIsVALUE" to Time", rb_obj_class(value));
+            }
         }
         result = cass_statement_bind_int64_by_name(cassandra_statement->statement, name, (cass_int64_t)(NUM2DBL(rb_Float(value)) * 1000));
         break;

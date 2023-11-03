@@ -62,16 +62,22 @@ static VALUE result_next_page(VALUE self)
     return self;
 }
 
-static VALUE result_convert_row(const CassRow *row, size_t column_count)
+static VALUE result_convert_row(const CassResult *result, const CassRow *row, size_t column_count)
 {
-    VALUE row_array = rb_ary_new2(column_count);
+    VALUE key;
+    const char *name;
+    size_t name_length;
+    VALUE hash = rb_hash_new();
 
     for (size_t i = 0; i < column_count; i++) {
         const CassValue *value = cass_row_get_column(row, i);
         const CassValueType type = cass_value_type(value);
 
+        cass_result_column_name(result, i, &name, &name_length);
+        key = rb_str_new(name, name_length);
+
         if (cass_value_is_null(value)) {
-            rb_ary_push(row_array, Qnil);
+            rb_hash_aset(hash, key, Qnil);
             continue;
         }
 
@@ -80,7 +86,7 @@ static VALUE result_convert_row(const CassRow *row, size_t column_count)
             {
                 cass_int8_t output;
                 cass_value_get_int8(value, &output);
-                rb_ary_push(row_array, INT2NUM(output));
+                rb_hash_aset(hash, key, INT2NUM(output));
             }
             break;
 
@@ -88,7 +94,7 @@ static VALUE result_convert_row(const CassRow *row, size_t column_count)
             {
                 cass_int16_t output;
                 cass_value_get_int16(value, &output);
-                rb_ary_push(row_array, INT2NUM(output));
+                rb_hash_aset(hash, key, INT2NUM(output));
             }
             break;
 
@@ -96,7 +102,7 @@ static VALUE result_convert_row(const CassRow *row, size_t column_count)
             {
                 cass_int32_t output;
                 cass_value_get_int32(value, &output);
-                rb_ary_push(row_array, INT2NUM(output));
+                rb_hash_aset(hash, key, INT2NUM(output));
             }
             break;
 
@@ -104,7 +110,7 @@ static VALUE result_convert_row(const CassRow *row, size_t column_count)
             {
                 cass_int64_t output;
                 cass_value_get_int64(value, &output);
-                rb_ary_push(row_array, LL2NUM(output));
+                rb_hash_aset(hash, key, LL2NUM(output));
             }
             break;
 
@@ -112,7 +118,7 @@ static VALUE result_convert_row(const CassRow *row, size_t column_count)
             {
                 cass_float_t output;
                 cass_value_get_float(value, &output);
-                rb_ary_push(row_array, DBL2NUM(output));
+                rb_hash_aset(hash, key, DBL2NUM(output));
             }
             break;
 
@@ -120,7 +126,7 @@ static VALUE result_convert_row(const CassRow *row, size_t column_count)
             {
                 cass_double_t output;
                 cass_value_get_double(value, &output);
-                rb_ary_push(row_array, DBL2NUM(output));
+                rb_hash_aset(hash, key, DBL2NUM(output));
             }
             break;
 
@@ -128,7 +134,7 @@ static VALUE result_convert_row(const CassRow *row, size_t column_count)
             {
                 cass_bool_t output;
                 cass_value_get_bool(value, &output);
-                rb_ary_push(row_array, output == cass_true ? Qtrue : Qfalse);
+                rb_hash_aset(hash, key, output == cass_true ? Qtrue : Qfalse);
             }
             break;
 
@@ -139,7 +145,7 @@ static VALUE result_convert_row(const CassRow *row, size_t column_count)
                 const char* s;
                 size_t s_length;
                 cass_value_get_string(value, &s, &s_length);
-                rb_ary_push(row_array, rb_str_new(s, s_length));
+                rb_hash_aset(hash, key, rb_str_new(s, s_length));
             }
             break;
 
@@ -147,7 +153,7 @@ static VALUE result_convert_row(const CassRow *row, size_t column_count)
             {
                 cass_int64_t output;
                 cass_value_get_int64(value, &output);
-                rb_ary_push(row_array, rb_time_new(output / 1000, output % 1000 * 1000));
+                rb_hash_aset(hash, key, rb_time_new(output / 1000, output % 1000 * 1000));
             }
             break;
 
@@ -157,17 +163,17 @@ static VALUE result_convert_row(const CassRow *row, size_t column_count)
                 char uuid[40];
                 cass_value_get_uuid(value, &output);
                 cass_uuid_string(output, uuid);
-                rb_ary_push(row_array, rb_str_new2(uuid));
+                rb_hash_aset(hash, key, rb_str_new2(uuid));
             }
             break;
 
         default:
             rb_warn("Unsupported type: %d", type);
-            rb_ary_push(row_array, sym_unsupported_column_type);
+            rb_hash_aset(hash, key, sym_unsupported_column_type);
         }
     }
 
-    return row_array;
+    return hash;
 }
 
 static VALUE result_each(VALUE self)
@@ -184,7 +190,7 @@ static VALUE result_each(VALUE self)
     column_count = cass_result_column_count(cassandra_result->result);
     while (cass_iterator_next(iterator)) {
         const CassRow *row = cass_iterator_get_row(iterator);
-        rb_yield(result_convert_row(row, column_count));
+        rb_yield(result_convert_row(cassandra_result->result, row, column_count));
     }
     cass_iterator_free(iterator);
 

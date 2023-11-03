@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require "ilios/version"
 require 'ilios.so'
+require 'ilios/version'
 
 module Ilios
   module Cassandra
@@ -11,7 +11,7 @@ module Ilios
       timeout_ms: 5_000,
       constant_delay_ms: 15_000,
       max_speculative_executions: 2,
-      page_size: 10000,
+      page_size: 10_000
     }
 
     def self.config=(config)

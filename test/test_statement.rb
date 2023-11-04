@@ -454,6 +454,41 @@ class StatementTest < Minitest::Test
     assert_equal(uuid, results.first['uuid'])
   end
 
+  def test_page_size
+    # invalid value
+    assert_raises(TypeError) { @insert_statement.page_size = Object.new }
+
+    # setup
+    10.times do
+      @insert_statement.bind(
+        {
+          id: Random.rand(2**60),
+          tinyint: 1,
+          smallint: 1,
+          int: 1,
+          bigint: 1,
+          float: 1,
+          double: 1,
+          boolean: true,
+          text: 'hello',
+          timestamp: Time.now,
+          uuid: SecureRandom.uuid
+        }
+      )
+      Ilios::Cassandra.session.execute(@insert_statement)
+    end
+
+    # specify page_size
+    statement = Ilios::Cassandra.session.prepare(<<~CQL)
+      SELECT * FROM ilios.test;
+    CQL
+    statement.page_size = 5
+
+    results = Ilios::Cassandra.session.execute(statement)
+
+    assert_equal(5, results.to_a.size)
+  end
+
   private
 
   def insert_and_get_results

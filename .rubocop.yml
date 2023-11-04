@@ -38,6 +38,10 @@ Style/ClassVars:
 Style/DateTime:
   Enabled: false
 
+Style/DisableCopsWithinSourceCodeDirective:
+  AllowedCops:
+    - Style/StringHashKeys
+
 Style/GlobalVars:
   Exclude:
     - 'ext/ilios/extconf.rb'

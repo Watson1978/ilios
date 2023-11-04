@@ -24,9 +24,14 @@ class StatementTest < Minitest::Test
   def test_bind
     # invalid value
     assert_raises(TypeError) { @insert_statement.bind(Object.new) }
+    assert_raises(TypeError) { @insert_statement.bind({ 1 => 123 }) }
     assert_raises(Ilios::Cassandra::StatementError) { @insert_statement.bind({ foo: 123 }) }
 
     # valid values
+    # rubocop:disable Style/StringHashKeys
+    assert(@insert_statement.bind({ 'id' => 1 }))
+    # rubocop:enable Style/StringHashKeys
+    assert(@insert_statement.bind({ id: 1 }))
     assert(
       @insert_statement.bind(
         {
@@ -44,6 +49,13 @@ class StatementTest < Minitest::Test
         }
       )
     )
+
+    key = Object.new
+    def key.to_str
+      'id'
+    end
+
+    assert(@insert_statement.bind({ key => 1 }))
   end
 
   def test_bind_null

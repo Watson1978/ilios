@@ -47,6 +47,7 @@ class StatementTest < Minitest::Test
   end
 
   def test_bind_null
+    @insert_statement.bind(tinyint: 123)
     @insert_statement.bind(tinyint: nil)
 
     results = insert_and_get_results

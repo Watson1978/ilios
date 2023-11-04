@@ -44,7 +44,7 @@ static VALUE statement_bind_tinyint(VALUE self, VALUE idx, VALUE value)
     long v = NUM2LONG(value);
 
     if (v < INT8_MIN || v > INT8_MAX) {
-        rb_raise(eStatementError, "Invalid value: %ld", v);
+        rb_raise(rb_eRangeError, "Invalid value: %ld", v);
     }
 
     GET_STATEMENT(self, cassandra_statement);
@@ -62,7 +62,7 @@ static VALUE statement_bind_smallint(VALUE self, VALUE idx, VALUE value)
     long v = NUM2LONG(value);
 
     if (v < INT16_MIN || v > INT16_MAX) {
-        rb_raise(eStatementError, "Invalid value: %ld", v);
+        rb_raise(rb_eRangeError, "Invalid value: %ld", v);
     }
 
     GET_STATEMENT(self, cassandra_statement);
@@ -80,7 +80,7 @@ static VALUE statement_bind_int(VALUE self, VALUE idx, VALUE value)
     long v = NUM2LONG(value);
 
     if (v < INT32_MIN || v > INT32_MAX) {
-        rb_raise(eStatementError, "Invalid value: %ld", v);
+        rb_raise(rb_eRangeError, "Invalid value: %ld", v);
     }
 
     GET_STATEMENT(self, cassandra_statement);
@@ -111,7 +111,7 @@ static VALUE statement_bind_float(VALUE self, VALUE idx, VALUE value)
     double v = NUM2DBL(value);
 
     if (!isnan(v) && !isinf(v) && (v < -FLT_MAX || v > FLT_MAX)) {
-        rb_raise(eStatementError, "Invalid value: %f", v);
+        rb_raise(rb_eRangeError, "Invalid value: %lf", v);
     }
 
     GET_STATEMENT(self, cassandra_statement);
@@ -229,7 +229,7 @@ static int hash_cb(VALUE key, VALUE value, VALUE statement)
             long v = NUM2LONG(value);
 
             if (v < INT8_MIN || v > INT8_MAX) {
-                rb_raise(eStatementError, "Invalid value: %ld", v);
+                rb_raise(rb_eRangeError, "Invalid value: %ld", v);
             }
             result = cass_statement_bind_int8_by_name(cassandra_statement->statement, name, (cass_int8_t)v);
         }
@@ -240,7 +240,7 @@ static int hash_cb(VALUE key, VALUE value, VALUE statement)
             long v = NUM2LONG(value);
 
             if (v < INT16_MIN || v > INT16_MAX) {
-                rb_raise(eStatementError, "Invalid value: %ld", v);
+                rb_raise(rb_eRangeError, "Invalid value: %ld", v);
             }
 
             result = cass_statement_bind_int16_by_name(cassandra_statement->statement, name, (cass_int16_t)v);
@@ -252,7 +252,7 @@ static int hash_cb(VALUE key, VALUE value, VALUE statement)
             long v = NUM2LONG(value);
 
             if (v < INT32_MIN || v > INT32_MAX) {
-                rb_raise(eStatementError, "Invalid value: %ld", v);
+                rb_raise(rb_eRangeError, "Invalid value: %ld", v);
             }
 
             result = cass_statement_bind_int32_by_name(cassandra_statement->statement, name, (cass_int32_t)v);
@@ -268,7 +268,7 @@ static int hash_cb(VALUE key, VALUE value, VALUE statement)
             double v = NUM2DBL(value);
 
             if (!isnan(v) && !isinf(v) && (v < -FLT_MAX || v > FLT_MAX)) {
-                rb_raise(eStatementError, "Invalid value: %f", v);
+                rb_raise(rb_eRangeError, "Invalid value: %lf", v);
             }
 
             result = cass_statement_bind_float_by_name(cassandra_statement->statement, name, v);

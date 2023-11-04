@@ -43,8 +43,8 @@ class StatementTest < Minitest::Test
     assert_raises(TypeError) { @insert_statement.bind_tinyint(Object.new, 1) }
 
     # invalid value
-    assert_raises(Ilios::Cassandra::StatementError) { @insert_statement.bind_tinyint(1, -2**7 - 1) }
-    assert_raises(Ilios::Cassandra::StatementError) { @insert_statement.bind_tinyint(1, 2**7) }
+    assert_raises(RangeError) { @insert_statement.bind_tinyint(1, -2**7 - 1) }
+    assert_raises(RangeError) { @insert_statement.bind_tinyint(1, 2**7) }
     assert_raises(RangeError) { @insert_statement.bind_tinyint(1, 2**63) } # bignum
     assert_raises(TypeError) { @insert_statement.bind_tinyint(1, Object.new) }
 
@@ -64,8 +64,8 @@ class StatementTest < Minitest::Test
     assert_raises(TypeError) { @insert_statement.bind_smallint(Object.new, 1) }
 
     # invalid value
-    assert_raises(Ilios::Cassandra::StatementError) { @insert_statement.bind_smallint(2, -2**15 - 1) }
-    assert_raises(Ilios::Cassandra::StatementError) { @insert_statement.bind_smallint(2, 2**15) }
+    assert_raises(RangeError) { @insert_statement.bind_smallint(2, -2**15 - 1) }
+    assert_raises(RangeError) { @insert_statement.bind_smallint(2, 2**15) }
     assert_raises(RangeError) { @insert_statement.bind_smallint(2, 2**63) } # bignum
     assert_raises(TypeError) { @insert_statement.bind_smallint(2, Object.new) }
 
@@ -85,8 +85,8 @@ class StatementTest < Minitest::Test
     assert_raises(TypeError) { @insert_statement.bind_int(Object.new, 1) }
 
     # invalid value
-    assert_raises(Ilios::Cassandra::StatementError) { @insert_statement.bind_int(3, -2**31 - 1) }
-    assert_raises(Ilios::Cassandra::StatementError) { @insert_statement.bind_int(3, 2**31) }
+    assert_raises(RangeError) { @insert_statement.bind_int(3, -2**31 - 1) }
+    assert_raises(RangeError) { @insert_statement.bind_int(3, 2**31) }
     assert_raises(RangeError) { @insert_statement.bind_int(3, 2**63) } # bignum
     assert_raises(TypeError) { @insert_statement.bind_int(3, Object.new) }
 
@@ -125,8 +125,8 @@ class StatementTest < Minitest::Test
     assert_raises(TypeError) { @insert_statement.bind_float(Object.new, 1) }
 
     # invalid value
-    assert_raises(Ilios::Cassandra::StatementError) { @insert_statement.bind_float(5, -3.402820018375656e+39) }
-    assert_raises(Ilios::Cassandra::StatementError) { @insert_statement.bind_float(5, 3.402820018375656e+39) }
+    assert_raises(RangeError) { @insert_statement.bind_float(5, -3.402820018375656e+39) }
+    assert_raises(RangeError) { @insert_statement.bind_float(5, 3.402820018375656e+39) }
     assert_raises(TypeError) { @insert_statement.bind_float(5, Object.new) }
 
     # valid values
@@ -289,8 +289,8 @@ class StatementTest < Minitest::Test
 
   def test_bind_bind_tinyint
     # invalid value
-    assert_raises(Ilios::Cassandra::StatementError) { @insert_statement.bind(tinyint: -2**7 - 1) }
-    assert_raises(Ilios::Cassandra::StatementError) { @insert_statement.bind(tinyint: 2**7) }
+    assert_raises(RangeError) { @insert_statement.bind(tinyint: -2**7 - 1) }
+    assert_raises(RangeError) { @insert_statement.bind(tinyint: 2**7) }
     assert_raises(RangeError) { @insert_statement.bind(tinyint: 2**63) } # bignum
     assert_raises(TypeError) { @insert_statement.bind(tinyint: Object.new) }
 
@@ -305,8 +305,8 @@ class StatementTest < Minitest::Test
 
   def test_bind_bind_smallint
     # invalid value
-    assert_raises(Ilios::Cassandra::StatementError) { @insert_statement.bind(smallint: -2**15 - 1) }
-    assert_raises(Ilios::Cassandra::StatementError) { @insert_statement.bind(smallint: 2**15) }
+    assert_raises(RangeError) { @insert_statement.bind(smallint: -2**15 - 1) }
+    assert_raises(RangeError) { @insert_statement.bind(smallint: 2**15) }
     assert_raises(RangeError) { @insert_statement.bind(smallint: 2**63) } # bignum
     assert_raises(TypeError) { @insert_statement.bind(smallint: Object.new) }
 
@@ -321,8 +321,8 @@ class StatementTest < Minitest::Test
 
   def test_bind_bind_int
     # invalid value
-    assert_raises(Ilios::Cassandra::StatementError) { @insert_statement.bind(int: -2**31 - 1) }
-    assert_raises(Ilios::Cassandra::StatementError) { @insert_statement.bind(int: 2**31) }
+    assert_raises(RangeError) { @insert_statement.bind(int: -2**31 - 1) }
+    assert_raises(RangeError) { @insert_statement.bind(int: 2**31) }
     assert_raises(RangeError) { @insert_statement.bind(int: 2**63) } # bignum
     assert_raises(TypeError) { @insert_statement.bind(int: Object.new) }
 
@@ -351,8 +351,8 @@ class StatementTest < Minitest::Test
 
   def test_bind_bind_float
     # invalid value
-    assert_raises(Ilios::Cassandra::StatementError) { @insert_statement.bind(float: -3.402820018375656e+39) }
-    assert_raises(Ilios::Cassandra::StatementError) { @insert_statement.bind(float: 3.402820018375656e+39) }
+    assert_raises(RangeError) { @insert_statement.bind(float: -3.402820018375656e+39) }
+    assert_raises(RangeError) { @insert_statement.bind(float: 3.402820018375656e+39) }
     assert_raises(TypeError) { @insert_statement.bind(float: Object.new) }
 
     # valid values

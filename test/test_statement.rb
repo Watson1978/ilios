@@ -29,10 +29,11 @@ class StatementTest < Minitest::Test
 
     # valid values
     # rubocop:disable Style/StringHashKeys
-    assert(@insert_statement.bind({ 'id' => 1 }))
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind({ 'id' => 1 }))
     # rubocop:enable Style/StringHashKeys
-    assert(@insert_statement.bind({ id: 1 }))
-    assert(
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind({ id: 1 }))
+    assert_kind_of(
+      Ilios::Cassandra::Statement,
       @insert_statement.bind(
         {
           id: 1,
@@ -55,7 +56,7 @@ class StatementTest < Minitest::Test
       'id'
     end
 
-    assert(@insert_statement.bind({ key => 1 }))
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind({ key => 1 }))
   end
 
   def test_bind_null
@@ -75,8 +76,8 @@ class StatementTest < Minitest::Test
     assert_raises(TypeError) { @insert_statement.bind(tinyint: Object.new) }
 
     # valid values
-    assert(@insert_statement.bind(tinyint: -2**7))
-    assert(@insert_statement.bind(tinyint: (2**7) - 1))
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind(tinyint: -2**7))
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind(tinyint: (2**7) - 1))
 
     results = insert_and_get_results
 
@@ -91,8 +92,8 @@ class StatementTest < Minitest::Test
     assert_raises(TypeError) { @insert_statement.bind(smallint: Object.new) }
 
     # valid values
-    assert(@insert_statement.bind(smallint: -2**15))
-    assert(@insert_statement.bind(smallint: (2**15) - 1))
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind(smallint: -2**15))
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind(smallint: (2**15) - 1))
 
     results = insert_and_get_results
 
@@ -107,8 +108,8 @@ class StatementTest < Minitest::Test
     assert_raises(TypeError) { @insert_statement.bind(int: Object.new) }
 
     # valid values
-    assert(@insert_statement.bind(int: -2**31))
-    assert(@insert_statement.bind(int: (2**31) - 1))
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind(int: -2**31))
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind(int: (2**31) - 1))
 
     results = insert_and_get_results
 
@@ -121,8 +122,8 @@ class StatementTest < Minitest::Test
     assert_raises(TypeError) { @insert_statement.bind(bigint: Object.new) }
 
     # valid values
-    assert(@insert_statement.bind(bigint: -2**62))
-    assert(@insert_statement.bind(bigint: 2**62))
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind(bigint: -2**62))
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind(bigint: 2**62))
 
     results = insert_and_get_results
 
@@ -136,8 +137,8 @@ class StatementTest < Minitest::Test
     assert_raises(TypeError) { @insert_statement.bind(float: Object.new) }
 
     # valid values
-    assert(@insert_statement.bind(float: -3.402820018375656e+38))
-    assert(@insert_statement.bind(float: 3.402820018375656e+38))
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind(float: -3.402820018375656e+38))
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind(float: 3.402820018375656e+38))
 
     results = insert_and_get_results
 
@@ -149,8 +150,8 @@ class StatementTest < Minitest::Test
     assert_raises(TypeError) { @insert_statement.bind(double: Object.new) }
 
     # valid values
-    assert(@insert_statement.bind(double: -1.79769313486232e+307))
-    assert(@insert_statement.bind(double: 1.79769313486232e+307))
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind(double: -1.79769313486232e+307))
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind(double: 1.79769313486232e+307))
 
     results = insert_and_get_results
 
@@ -159,14 +160,14 @@ class StatementTest < Minitest::Test
 
   def test_bind_boolean
     # valid values for true
-    assert(@insert_statement.bind(boolean: true))
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind(boolean: true))
 
     results = insert_and_get_results
 
     assert(results.first['boolean'])
 
     # valid values for false
-    assert(@insert_statement.bind(boolean: false))
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind(boolean: false))
 
     results = insert_and_get_results
 
@@ -178,7 +179,7 @@ class StatementTest < Minitest::Test
     assert_raises(TypeError) { @insert_statement.bind(text: Object.new) }
 
     # valid values
-    assert(@insert_statement.bind(text: 'hello'))
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind(text: 'hello'))
 
     results = insert_and_get_results
 
@@ -190,7 +191,7 @@ class StatementTest < Minitest::Test
       'hello'
     end
 
-    assert(@insert_statement.bind(text: obj))
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind(text: obj))
 
     results = insert_and_get_results
 
@@ -204,7 +205,7 @@ class StatementTest < Minitest::Test
     # valid values
     time = Time.now.ceil
 
-    assert(@insert_statement.bind(timestamp: time))
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind(timestamp: time))
 
     results = insert_and_get_results
 
@@ -213,7 +214,7 @@ class StatementTest < Minitest::Test
     # valid values
     date_time = DateTime.parse('2023-11-01T12:30:45')
 
-    assert(@insert_statement.bind(timestamp: date_time))
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind(timestamp: date_time))
 
     results = insert_and_get_results
 
@@ -227,7 +228,7 @@ class StatementTest < Minitest::Test
     # valid values
     uuid = SecureRandom.uuid
 
-    assert(@insert_statement.bind(uuid: uuid))
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind(uuid: uuid))
 
     results = insert_and_get_results
 

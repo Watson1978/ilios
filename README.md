@@ -64,13 +64,6 @@ CQL
     message: 'Hello World',
     created_at: Time.now,
   })
-
-  #== Other way to bind values
-  # statement
-  #   .bind_bigint(0, i)
-  #   .bind_text(1, 'Hello World')
-  #   .bind_timestamp(2, Time.now)
-
   Ilios::Cassandra.session.execute(statement)
 end
 

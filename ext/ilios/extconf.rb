@@ -25,7 +25,7 @@ unless File.exist?(LIBUV_INSTALL_PATH)
     end
   end
 
-  libuv_recipe = LibuvRecipe.new('libuv', Ilios::LIBUV_VERSION, make_command: 'make -j')
+  libuv_recipe = LibuvRecipe.new('libuv', Ilios::LIBUV_VERSION, make_command: 'make -j 3')
   libuv_recipe.files << {
     url: "https://github.com/libuv/libuv/archive/v#{Ilios::LIBUV_VERSION}.tar.gz"
   }
@@ -53,7 +53,7 @@ unless File.exist?(CASSANDRA_CPP_DRIVER_INSTALL_PATH)
     end
   end
 
-  cassandra_recipe = CassandraRecipe.new('cpp-driver', Ilios::CASSANDRA_CPP_DRIVER_VERSION, make_command: 'make -j')
+  cassandra_recipe = CassandraRecipe.new('cpp-driver', Ilios::CASSANDRA_CPP_DRIVER_VERSION, make_command: 'make -j 3')
   cassandra_recipe.files << {
     url: "https://github.com/datastax/cpp-driver/archive/#{Ilios::CASSANDRA_CPP_DRIVER_VERSION}.tar.gz"
   }

@@ -176,23 +176,44 @@ static VALUE result_convert_row(const CassResult *result, const CassRow *row, si
     return hash;
 }
 
+struct result_each_arg {
+    CassandraResult *cassandra_result;
+    CassIterator *iterator;
+};
+
+static VALUE result_each_body(VALUE a)
+{
+    struct result_each_arg *args = (struct result_each_arg *)a;
+    size_t column_count = cass_result_column_count(args->cassandra_result->result);
+
+    while (cass_iterator_next(args->iterator)) {
+        const CassRow *row = cass_iterator_get_row(args->iterator);
+        rb_yield(result_convert_row(args->cassandra_result->result, row, column_count));
+    }
+    return Qnil;
+}
+
+static VALUE result_each_ensure(VALUE a)
+{
+    CassIterator *iterator = (CassIterator *)a;
+    cass_iterator_free(iterator);
+    return Qnil;
+}
+
 static VALUE result_each(VALUE self)
 {
     CassandraResult *cassandra_result;
     CassIterator *iterator;
-    size_t column_count;
+    struct result_each_arg args;
 
     RETURN_ENUMERATOR(self, 0, 0);
 
     GET_RESULT(self, cassandra_result);
 
     iterator = cass_iterator_from_result(cassandra_result->result);
-    column_count = cass_result_column_count(cassandra_result->result);
-    while (cass_iterator_next(iterator)) {
-        const CassRow *row = cass_iterator_get_row(iterator);
-        rb_yield(result_convert_row(cassandra_result->result, row, column_count));
-    }
-    cass_iterator_free(iterator);
+    args.cassandra_result = cassandra_result;
+    args.iterator = iterator;
+    rb_ensure(result_each_body, (VALUE)&args, result_each_ensure, (VALUE)iterator);
 
     return self;
 }

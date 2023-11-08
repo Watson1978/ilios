@@ -29,6 +29,8 @@ WITH REPLICATION = {
 };
 ```
 
+Then, you can run the following code.
+
 ```ruby
 require 'ilios'
 

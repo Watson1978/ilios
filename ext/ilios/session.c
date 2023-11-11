@@ -117,9 +117,6 @@ static void session_destroy(void *ptr)
     CassandraSession *cassandra_session = (CassandraSession *)ptr;
 
     if (cassandra_session->session) {
-        CassFuture *close_future = cass_session_close(cassandra_session->session);
-        nogvl_future_wait(close_future);
-        cass_future_free(close_future);
         cass_session_free(cassandra_session->session);
     }
     if (cassandra_session->connect_future) {

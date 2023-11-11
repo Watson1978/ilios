@@ -54,6 +54,8 @@ class BenchmarkCassandra
   end
 
   def run_execute_async(x)
+    futures = []
+
     x.report('cassandra-driver:execute_async') do
       future = @session.execute_async(
         statement,
@@ -67,7 +69,11 @@ class BenchmarkCassandra
       )
       future.on_success do |rows|
       end
+
+      futures << future
     end
+
+    Cassandra::Future.all(*futures).get
   end
 
   def statement
@@ -96,6 +102,8 @@ class BenchmarkIlios
   end
 
   def run_execute_async(x)
+    futures = []
+
     x.report('ilios:execute_async') do
       statement.bind(
         {
@@ -106,10 +114,12 @@ class BenchmarkIlios
       )
       future = Ilios::Cassandra.session.execute_async(statement)
       future.on_success do |results|
-        results.each do |row|
-        end
       end
+
+      futures << future
     end
+
+    futures.each(&:await)
   end
 
   def statement
@@ -128,7 +138,8 @@ Benchmark.ips do |x|
   BenchmarkCassandra.new.run_execute_async(x)
 end
 
-sleep 10
+GC.start
+sleep 20
 
 puts ''
 Benchmark.ips do |x|

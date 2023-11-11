@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'bundler/inline'
 gemfile do
   source 'https://rubygems.org'
@@ -7,10 +9,9 @@ gemfile do
   gem 'ilios'
 end
 
-
 Ilios::Cassandra.config = {
   keyspace: 'ilios',
-  hosts: ['127.0.0.1'],
+  hosts: ['127.0.0.1']
 }
 
 # Create new table
@@ -30,7 +31,6 @@ statement = Ilios::Cassandra.session.prepare(<<~CQL)
 CQL
 Ilios::Cassandra.session.execute(statement)
 
-
 class BenchmarkCassandra
   def initialize
     @cluster = Cassandra.cluster
@@ -40,25 +40,31 @@ class BenchmarkCassandra
 
   def run_execute(x)
     x.report('cassandra-driver:execute') do
-      @session.execute(statement, {
-        arguments: {
-          id: Random.rand(2**40),
-          message: 'hello',
-          created_at: Time.now
+      @session.execute(
+        statement,
+        {
+          arguments: {
+            id: Random.rand(2**40),
+            message: 'hello',
+            created_at: Time.now
+          }
         }
-      })
+      )
     end
   end
 
   def run_execute_async(x)
     x.report('cassandra-driver:execute_async') do
-      future = @session.execute_async(statement, {
-        arguments: {
-          id: Random.rand(2**40),
-          message: 'hello',
-          created_at: Time.now
+      future = @session.execute_async(
+        statement,
+        {
+          arguments: {
+            id: Random.rand(2**40),
+            message: 'hello',
+            created_at: Time.now
+          }
         }
-      })
+      )
       future.on_success do |rows|
       end
     end
@@ -78,22 +84,26 @@ end
 class BenchmarkIlios
   def run_execute(x)
     x.report('ilios:execute') do
-      statement.bind({
-        id: Random.rand(2**40),
-        message: 'hello',
-        created_at: Time.now
-      })
+      statement.bind(
+        {
+          id: Random.rand(2**40),
+          message: 'hello',
+          created_at: Time.now
+        }
+      )
       Ilios::Cassandra.session.execute(statement)
     end
   end
 
   def run_execute_async(x)
     x.report('ilios:execute_async') do
-      statement.bind({
-        id: Random.rand(2**40),
-        message: 'hello',
-        created_at: Time.now
-      })
+      statement.bind(
+        {
+          id: Random.rand(2**40),
+          message: 'hello',
+          created_at: Time.now
+        }
+      )
       future = Ilios::Cassandra.session.execute_async(statement)
       future.on_success do |results|
         results.each do |row|
@@ -120,7 +130,7 @@ end
 
 sleep 10
 
-puts ""
+puts ''
 Benchmark.ips do |x|
   BenchmarkIlios.new.run_execute(x)
   BenchmarkIlios.new.run_execute_async(x)

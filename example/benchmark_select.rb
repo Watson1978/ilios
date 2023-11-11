@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'bundler/inline'
 gemfile do
   source 'https://rubygems.org'
@@ -7,10 +9,9 @@ gemfile do
   gem 'ilios'
 end
 
-
 Ilios::Cassandra.config = {
   keyspace: 'ilios',
-  hosts: ['127.0.0.1'],
+  hosts: ['127.0.0.1']
 }
 
 # Create new table
@@ -40,14 +41,15 @@ statement = Ilios::Cassandra.session.prepare(<<-CQL)
 CQL
 
 1000.times do
-  statement.bind({
-    id: Random.rand(2**40),
-    message: 'hello',
-    created_at: Time.now
-  })
+  statement.bind(
+    {
+      id: Random.rand(2**40),
+      message: 'hello',
+      created_at: Time.now
+    }
+  )
   Ilios::Cassandra.session.execute(statement)
 end
-
 
 class BenchmarkCassandra
   def initialize
@@ -108,7 +110,7 @@ end
 
 sleep 10
 
-puts ""
+puts ''
 Benchmark.ips do |x|
   BenchmarkIlios.new.run_execute(x)
   BenchmarkIlios.new.run_execute_async(x)

@@ -32,6 +32,9 @@ Metrics/MethodLength:
 Minitest/MultipleAssertions:
   Enabled: false
 
+Style/BlockComments:
+  Enabled: false
+
 Style/ClassVars:
   Enabled: false
 

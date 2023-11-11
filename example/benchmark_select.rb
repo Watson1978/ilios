@@ -116,6 +116,8 @@ class BenchmarkIlios
 end
 
 Benchmark.ips do |x|
+  x.warmup = 1
+  x.time = 2
   BenchmarkCassandra.new.run_execute(x)
   BenchmarkCassandra.new.run_execute_async(x)
 end
@@ -125,6 +127,8 @@ sleep 20
 
 puts ''
 Benchmark.ips do |x|
+  x.warmup = 1
+  x.time = 2
   BenchmarkIlios.new.run_execute(x)
   BenchmarkIlios.new.run_execute_async(x)
 end
@@ -139,19 +143,19 @@ end
 ## Results
 Warming up --------------------------------------
 cassandra-driver:execute
-                        13.000  i/100ms
+                        10.000  i/100ms
 cassandra-driver:execute_async
-                         7.621k i/100ms
+                         3.684k i/100ms
 Calculating -------------------------------------
 cassandra-driver:execute
-                         48.627  (±20.6%) i/s -    247.000  in   5.301501s
+                         48.115  (±22.9%) i/s -    100.000  in   2.183978s
 cassandra-driver:execute_async
-                         77.896k (±31.4%) i/s -    304.840k in   5.063101s
+                         78.647k (±30.0%) i/s -    117.888k in   2.014176s
 
 Warming up --------------------------------------
-       ilios:execute    15.000  i/100ms
- ilios:execute_async    10.000  i/100ms
+       ilios:execute     9.000  i/100ms
+ ilios:execute_async    26.000  i/100ms
 Calculating -------------------------------------
-       ilios:execute    166.764  (±28.2%) i/s -    735.000  in   5.135326s
- ilios:execute_async    539.420k (±24.4%) i/s -     90.870k in   5.656643s
+       ilios:execute    168.780  (±28.4%) i/s -    288.000  in   2.029783s
+ ilios:execute_async    453.181k (±32.9%) i/s -     10.660k in   3.549510s
 =end

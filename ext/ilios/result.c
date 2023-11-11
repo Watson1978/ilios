@@ -33,6 +33,12 @@ void result_await(CassandraResult *cassandra_result)
     }
 }
 
+/**
+ * Loads next page synchronously
+ *
+ * @return [Cassandra::Result, nil] returns self or +nil+ if last page.
+ * @raise [Cassandra::ExecutionError] If the query is invalid or there is something wrong with the session.
+ */
 static VALUE result_next_page(VALUE self)
 {
     CassandraResult *cassandra_result;
@@ -200,6 +206,11 @@ static VALUE result_each_ensure(VALUE a)
     return Qnil;
 }
 
+/**
+ * Yield the row of result into a block.
+ *
+ * @return [Cassandra::Result, Enumerator] returns self or +Enumerator+ if block is not given.
+ */
 static VALUE result_each(VALUE self)
 {
     CassandraResult *cassandra_result;

@@ -148,6 +148,15 @@ static VALUE future_result_yielder_thread(void *arg)
     return Qnil;
 }
 
+/**
+ * Run block when future resolves to a value.
+ *
+ * @yieldparam value [Cassandra::Statement, Cassandra::Result] A value.
+ *   Yields +Cassandra::Statement+ object when future was created by +Cassandra::Session#prepare_async+.
+ *   Yields +Cassandra::Result+ object when future was created by +Cassandra::Session#execute_async+.
+ * @return [Cassandra::Future] self.
+ * @raise [Cassandra::ExecutionError] If this method will be called twice.
+ */
 static VALUE future_on_success(VALUE self)
 {
     CassandraFuture *cassandra_future;
@@ -185,6 +194,12 @@ static VALUE future_on_success(VALUE self)
     return self;
 }
 
+/**
+ * Run block when future resolves to error.
+ *
+ * @return [Cassandra::Future] self.
+ * @raise [Cassandra::ExecutionError] If this method will be called twice.
+ */
 static VALUE future_on_failure(VALUE self)
 {
     CassandraFuture *cassandra_future;
@@ -222,6 +237,11 @@ static VALUE future_on_failure(VALUE self)
     return self;
 }
 
+/**
+ * Wait to complete a future's statement.
+ *
+ * @return [Cassandra::Future] self.
+ */
 static VALUE future_await(VALUE self)
 {
     CassandraFuture *cassandra_future;

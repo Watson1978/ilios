@@ -1,5 +1,12 @@
 #include "ilios.h"
 
+/**
+ * Connects a session to the keyspace specified in +config+ method.
+ *
+ * @return [Cassandra::Session] A new session object.
+ * @raise [RuntimeError] If no host is specified to connect in +config+ method.
+ * @raise [Cassandra::ConnectError] If the connection fails for any reason.
+ */
 static VALUE cassandra_connect(VALUE self)
 {
     CassandraSession *cassandra_session;

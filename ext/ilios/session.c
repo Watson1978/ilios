@@ -15,6 +15,13 @@ const rb_data_type_t cassandra_session_data_type = {
     RUBY_TYPED_FREE_IMMEDIATELY | RUBY_TYPED_WB_PROTECTED | RUBY_TYPED_FROZEN_SHAREABLE,
 };
 
+/**
+ * Prepares a given query asynchronously and returns a future prepared statement.
+ *
+ * @param query [String] A query to prepare.
+ * @return [Cassandra::Future] A future prepared statement.
+ * @raise [TypeError] If the query is not a string.
+ */
 static VALUE session_prepare_async(VALUE self, VALUE query)
 {
     CassandraSession *cassandra_session;
@@ -36,6 +43,14 @@ static VALUE session_prepare_async(VALUE self, VALUE query)
     return cassandra_future_obj;
 }
 
+/**
+ * Prepares a given query.
+ *
+ * @param query [String] A query to prepare.
+ * @return [Cassandra::Statement] A statement to execute.
+ * @raise [Cassandra::ExecutionError] If the query is invalid or there is something wrong with the session.
+ * @raise [TypeError] If the query is not a string.
+ */
 static VALUE session_prepare(VALUE self, VALUE query)
 {
     CassandraSession *cassandra_session;
@@ -67,6 +82,13 @@ static VALUE session_prepare(VALUE self, VALUE query)
     return cassandra_statement_obj;
 }
 
+/**
+ * Executes a given statement asynchronously and returns a future result.
+ *
+ * @param statement [Cassandra::Statement] A statement to execute.
+ * @return [Cassandra::Future] A future for result.
+ * @raise [TypeError] If the invalid object is given.
+ */
 static VALUE session_execute_async(VALUE self, VALUE statement)
 {
     CassandraSession *cassandra_session;
@@ -91,6 +113,14 @@ static VALUE session_execute_async(VALUE self, VALUE statement)
     return cassandra_future_obj;
 }
 
+/**
+ * Executes a given statement.
+ *
+ * @param statement [Cassandra::Statement] A statement to execute.
+ * @return [Cassandra::Result] A result.
+ * @raise [Cassandra::ExecutionError] If there is something wrong with the session.
+ * @raise [TypeError] If the invalid object is given.
+ */
 static VALUE session_execute(VALUE self, VALUE statement)
 {
     CassandraSession *cassandra_session;

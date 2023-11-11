@@ -150,6 +150,16 @@ result_check:
     return ST_CONTINUE;
 }
 
+/**
+ * Binds a specified column value to a query.
+ * A hash object should be given with column name as key.
+ *
+ * @param hash [Hash] A hash object to bind.
+ * @return [Cassandra::Statement] self.
+ * @raise [RangeError] If an invalid range of values was given.
+ * @raise [TypeError] If an invalid type of values was given.
+ * @raise [Cassandra::StatementError] If an invalid column name was given.
+ */
 static VALUE statement_bind(VALUE self, VALUE hash)
 {
     CassandraStatement *cassandra_statement;
@@ -161,6 +171,12 @@ static VALUE statement_bind(VALUE self, VALUE hash)
     return self;
 }
 
+/**
+ * Sets the statement's page size.
+ *
+ * @param page_size [Integer] A page size.
+ * @return [Cassandra::Statement] self.
+ */
 static VALUE statement_page_size(VALUE self, VALUE page_size)
 {
     CassandraStatement *cassandra_statement;

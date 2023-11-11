@@ -109,20 +109,29 @@ prepare_future = Ilios::Cassandra.session.prepare_async(<<~CQL)
 CQL
 
 prepare_future.on_success { |statement|
-  statement.bind({
-    id: 1,
-    message: 'Hello World',
-    created_at: Time.now,
-  })
-  result_future = Ilios::Cassandra.session.execute_async(statement)
-  result_future.on_success { |result|
-    p result
-    p "success"
-  }
-  result_future.on_failure {
-    p "fail"
-  }
+  futures = []
+
+  10.times do |i|
+    statement.bind({
+      id: i,
+      message: 'Hello World',
+      created_at: Time.now,
+    })
+    result_future = Ilios::Cassandra.session.execute_async(statement)
+    result_future.on_success { |result|
+      p result
+      p "success"
+    }
+    result_future.on_failure {
+      p "fail"
+    }
+
+    futures << result_future
+  end
+  futures.each(&:await)
 }
+
+prepare_future.await
 ```
 
 ## Contributing

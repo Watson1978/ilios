@@ -123,6 +123,7 @@ static VALUE future_result_yielder_synchronize(VALUE arg)
     } else {
         future_result_failure_yield(cassandra_future);
     }
+    uv_sem_post(&cassandra_future->sem);
     return Qnil;
 }
 
@@ -221,6 +222,20 @@ static VALUE future_on_failure(VALUE self)
     return self;
 }
 
+static VALUE future_await(VALUE self)
+{
+    CassandraFuture *cassandra_future;
+
+    GET_FUTURE(self, cassandra_future);
+
+    if (cassandra_future->on_success_block || cassandra_future->on_failure_block) {
+        nogvl_sem_wait(&cassandra_future->sem);
+    } else {
+        nogvl_future_wait(cassandra_future->future);
+    }
+    return self;
+}
+
 static void future_mark(void *ptr)
 {
     CassandraFuture *cassandra_future = (CassandraFuture *)ptr;
@@ -238,6 +253,7 @@ static void future_destroy(void *ptr)
     if (cassandra_future->future) {
         cass_future_free(cassandra_future->future);
     }
+    uv_sem_destroy(&cassandra_future->sem);
     xfree(cassandra_future);
 }
 
@@ -263,6 +279,7 @@ void Init_future(void)
 
     rb_define_method(cFuture, "on_success", future_on_success, 0);
     rb_define_method(cFuture, "on_failure", future_on_failure, 0);
+    rb_define_method(cFuture, "await", future_await, 0);
 
     future_thread_pool_init(&thread_pool_prepare);
     future_thread_pool_init(&thread_pool_execute);

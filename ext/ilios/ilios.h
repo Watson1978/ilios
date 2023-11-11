@@ -54,6 +54,8 @@ typedef struct
     VALUE on_success_block;
     VALUE on_failure_block;
     VALUE proc_mutex;
+
+    uv_sem_t sem;
 } CassandraFuture;
 
 extern const rb_data_type_t cassandra_session_data_type;
@@ -97,6 +99,7 @@ extern void Init_future(void);
 extern void nogvl_future_wait(CassFuture *future);
 extern CassFuture *nogvl_session_prepare(CassSession* session, VALUE query);
 extern CassFuture *nogvl_session_execute(CassSession* session, CassStatement* statement);
+extern void nogvl_sem_wait(uv_sem_t *sem);
 
 extern void statement_default_config(CassandraStatement *cassandra_statement);
 extern void result_await(CassandraResult *cassandra_result);

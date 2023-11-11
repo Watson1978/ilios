@@ -31,6 +31,7 @@ static VALUE session_prepare_async(VALUE self, VALUE query)
     cassandra_future->future = prepare_future;
     cassandra_future->session_obj = self;
     cassandra_future->proc_mutex = rb_mutex_new();
+    uv_sem_init(&cassandra_future->sem, 0);
 
     return cassandra_future_obj;
 }
@@ -85,6 +86,7 @@ static VALUE session_execute_async(VALUE self, VALUE statement)
     cassandra_future->session_obj = self;
     cassandra_future->statement_obj = statement;
     cassandra_future->proc_mutex = rb_mutex_new();
+    uv_sem_init(&cassandra_future->sem, 0);
 
     return cassandra_future_obj;
 }

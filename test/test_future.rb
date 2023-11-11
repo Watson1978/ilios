@@ -25,7 +25,7 @@ class FutureTest < Minitest::Test
     prepare_future.on_success do |statement|
       futures = []
 
-      10.times do |i|
+      50.times do |i|
         statement.bind(
           {
             id: i,
@@ -51,6 +51,6 @@ class FutureTest < Minitest::Test
     end
     prepare_future.await
 
-    assert_equal(10, count)
+    assert_equal(50, count)
   end
 end

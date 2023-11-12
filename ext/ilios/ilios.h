@@ -56,6 +56,7 @@ typedef struct
     VALUE proc_mutex;
 
     uv_sem_t sem;
+    bool already_waited;
 } CassandraFuture;
 
 extern const rb_data_type_t cassandra_session_data_type;

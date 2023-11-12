@@ -20,6 +20,9 @@ Layout/RedundantLineBreak:
 Lint/ConstantResolution:
   Enabled: false
 
+Lint/EmptyBlock:
+  Enabled: false
+
 Metrics/AbcSize:
   Enabled: false
 

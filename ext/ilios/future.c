@@ -254,11 +254,16 @@ static VALUE future_await(VALUE self)
 
     GET_FUTURE(self, cassandra_future);
 
+    if (cassandra_future->already_waited) {
+        rb_raise(eExecutionError, "It should not call twice");
+    }
+
     if (cassandra_future->on_success_block || cassandra_future->on_failure_block) {
         nogvl_sem_wait(&cassandra_future->sem);
     } else {
         nogvl_future_wait(cassandra_future->future);
     }
+    cassandra_future->already_waited = true;
     return self;
 }
 

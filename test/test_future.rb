@@ -52,6 +52,7 @@ class FutureTest < Minitest::Test
     prepare_future.await
 
     assert_equal(50, count)
+    assert_raises(Ilios::Cassandra::ExecutionError) { prepare_future.await }
   end
 
   def test_on_success
@@ -60,9 +61,9 @@ class FutureTest < Minitest::Test
 
     assert_raises(ArgumentError) { future.on_success }
 
-    future.on_success { }
+    future.on_success {}
 
-    assert_raises(Ilios::Cassandra::ExecutionError) { future.on_success { } }
+    assert_raises(Ilios::Cassandra::ExecutionError) { future.on_success {} }
   end
 
   def test_on_failure
@@ -71,8 +72,8 @@ class FutureTest < Minitest::Test
 
     assert_raises(ArgumentError) { future.on_failure }
 
-    future.on_failure { }
+    future.on_failure {}
 
-    assert_raises(Ilios::Cassandra::ExecutionError) { future.on_failure { } }
-end
+    assert_raises(Ilios::Cassandra::ExecutionError) { future.on_failure {} }
+  end
 end

@@ -53,4 +53,26 @@ class FutureTest < Minitest::Test
 
     assert_equal(50, count)
   end
+
+  def test_on_success
+    statement = Ilios::Cassandra.session.prepare('SELECT * FROM ilios.test;')
+    future = Ilios::Cassandra.session.execute_async(statement)
+
+    assert_raises(ArgumentError) { future.on_success }
+
+    future.on_success { }
+
+    assert_raises(Ilios::Cassandra::ExecutionError) { future.on_success { } }
+  end
+
+  def test_on_failure
+    statement = Ilios::Cassandra.session.prepare('SELECT * FROM ilios.test;')
+    future = Ilios::Cassandra.session.execute_async(statement)
+
+    assert_raises(ArgumentError) { future.on_failure }
+
+    future.on_failure { }
+
+    assert_raises(Ilios::Cassandra::ExecutionError) { future.on_failure { } }
+end
 end

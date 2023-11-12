@@ -156,6 +156,7 @@ static VALUE future_result_yielder_thread(void *arg)
  *   Yields +Cassandra::Result+ object when future was created by +Cassandra::Session#execute_async+.
  * @return [Cassandra::Future] self.
  * @raise [Cassandra::ExecutionError] If this method will be called twice.
+ * @raise [ArgumentError] If no block was given.
  */
 static VALUE future_on_success(VALUE self)
 {
@@ -167,30 +168,32 @@ static VALUE future_on_success(VALUE self)
     if (cassandra_future->on_success_block) {
         rb_raise(eExecutionError, "It should not call twice");
     }
-
-    if (rb_block_given_p()) {
-        rb_mutex_lock(cassandra_future->proc_mutex);
-
-        if (!cassandra_future->on_failure_block) {
-            // Invoke the callback with thread pool only once
-            wakeup_thread = true;
-        }
-
-        cassandra_future->on_success_block = rb_block_proc();
-
-        if (cass_future_ready(cassandra_future->future)) {
-            rb_mutex_unlock(cassandra_future->proc_mutex);
-            if (cass_future_error_code(cassandra_future->future) == CASS_OK) {
-                future_result_success_yield(cassandra_future);
-            }
-            return self;
-        }
-
-        if (wakeup_thread) {
-            future_queue_push(future_thread_pool_get(cassandra_future), self);
-        }
-        rb_mutex_unlock(cassandra_future->proc_mutex);
+    if (!rb_block_given_p()) {
+        rb_raise(rb_eArgError, "no block given");
     }
+
+    rb_mutex_lock(cassandra_future->proc_mutex);
+
+    if (!cassandra_future->on_failure_block) {
+        // Invoke the callback with thread pool only once
+        wakeup_thread = true;
+    }
+
+    cassandra_future->on_success_block = rb_block_proc();
+
+    if (cass_future_ready(cassandra_future->future)) {
+        rb_mutex_unlock(cassandra_future->proc_mutex);
+        if (cass_future_error_code(cassandra_future->future) == CASS_OK) {
+            future_result_success_yield(cassandra_future);
+        }
+        return self;
+    }
+
+    if (wakeup_thread) {
+        future_queue_push(future_thread_pool_get(cassandra_future), self);
+    }
+    rb_mutex_unlock(cassandra_future->proc_mutex);
+
     return self;
 }
 
@@ -199,6 +202,7 @@ static VALUE future_on_success(VALUE self)
  *
  * @return [Cassandra::Future] self.
  * @raise [Cassandra::ExecutionError] If this method will be called twice.
+ * @raise [ArgumentError] If no block was given.
  */
 static VALUE future_on_failure(VALUE self)
 {
@@ -210,30 +214,32 @@ static VALUE future_on_failure(VALUE self)
     if (cassandra_future->on_failure_block) {
         rb_raise(eExecutionError, "It should not call twice");
     }
-
-    if (rb_block_given_p()) {
-        rb_mutex_lock(cassandra_future->proc_mutex);
-
-        if (!cassandra_future->on_success_block) {
-            // Invoke the callback with thread pool only once
-            wakeup_thread = true;
-        }
-
-        cassandra_future->on_failure_block = rb_block_proc();
-
-        if (cass_future_ready(cassandra_future->future)) {
-            rb_mutex_unlock(cassandra_future->proc_mutex);
-            if (cass_future_error_code(cassandra_future->future) != CASS_OK) {
-                future_result_failure_yield(cassandra_future);
-            }
-            return self;
-        }
-
-        if (wakeup_thread) {
-            future_queue_push(future_thread_pool_get(cassandra_future), self);
-        }
-        rb_mutex_unlock(cassandra_future->proc_mutex);
+    if (!rb_block_given_p()) {
+        rb_raise(rb_eArgError, "no block given");
     }
+
+    rb_mutex_lock(cassandra_future->proc_mutex);
+
+    if (!cassandra_future->on_success_block) {
+        // Invoke the callback with thread pool only once
+        wakeup_thread = true;
+    }
+
+    cassandra_future->on_failure_block = rb_block_proc();
+
+    if (cass_future_ready(cassandra_future->future)) {
+        rb_mutex_unlock(cassandra_future->proc_mutex);
+        if (cass_future_error_code(cassandra_future->future) != CASS_OK) {
+            future_result_failure_yield(cassandra_future);
+        }
+        return self;
+    }
+
+    if (wakeup_thread) {
+        future_queue_push(future_thread_pool_get(cassandra_future), self);
+    }
+    rb_mutex_unlock(cassandra_future->proc_mutex);
+
     return self;
 }
 

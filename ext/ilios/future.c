@@ -112,29 +112,43 @@ static void future_result_failure_yield(CassandraFuture *cassandra_future)
     }
 }
 
-static VALUE future_result_yielder_synchronize(VALUE arg)
+static VALUE future_result_yielder_synchronize(VALUE future)
 {
     CassandraFuture *cassandra_future;
 
-    GET_FUTURE(arg, cassandra_future);
+    GET_FUTURE(future, cassandra_future);
 
     if (cass_future_error_code(cassandra_future->future) == CASS_OK) {
         future_result_success_yield(cassandra_future);
     } else {
         future_result_failure_yield(cassandra_future);
     }
+    return Qnil;
+}
+
+static VALUE future_result_yielder_body(VALUE future)
+{
+    CassandraFuture *cassandra_future;
+
+    GET_FUTURE(future, cassandra_future);
+
+    nogvl_future_wait(cassandra_future->future);
+    return rb_mutex_synchronize(cassandra_future->proc_mutex, future_result_yielder_synchronize, future);
+
+}
+
+static VALUE future_result_yielder_ensure(VALUE future)
+{
+    CassandraFuture *cassandra_future;
+
+    GET_FUTURE(future, cassandra_future);
     uv_sem_post(&cassandra_future->sem);
     return Qnil;
 }
 
-static VALUE future_result_yielder(VALUE arg)
+static VALUE future_result_yielder(VALUE future)
 {
-    CassandraFuture *cassandra_future;
-
-    GET_FUTURE(arg, cassandra_future);
-
-    nogvl_future_wait(cassandra_future->future);
-    return rb_mutex_synchronize(cassandra_future->proc_mutex, future_result_yielder_synchronize, arg);
+    return rb_ensure(future_result_yielder_body, future, future_result_yielder_ensure, future);
 }
 
 static VALUE future_result_yielder_thread(void *arg)

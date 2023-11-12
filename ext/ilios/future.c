@@ -34,6 +34,7 @@ static void future_thread_pool_init(future_thread_pool *pool)
     pool->queue = rb_funcall(cQueue, id_new, 0);
     for (int i = 0; i < THREAD_MAX; i++) {
         pool->thread[i] = rb_thread_create(future_result_yielder_thread, (void*)pool);
+        rb_funcall(pool->thread[i], id_abort_on_exception_set, 1, Qtrue);
     }
 }
 

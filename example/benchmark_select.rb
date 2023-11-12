@@ -143,19 +143,19 @@ end
 ## Results
 Warming up --------------------------------------
 cassandra-driver:execute
-                        10.000  i/100ms
+                        12.000  i/100ms
 cassandra-driver:execute_async
-                         3.684k i/100ms
+                         6.325k i/100ms
 Calculating -------------------------------------
 cassandra-driver:execute
-                         48.115  (±22.9%) i/s -    100.000  in   2.183978s
+                         50.608  (±23.7%) i/s -     96.000  in   2.024429s
 cassandra-driver:execute_async
-                         78.647k (±30.0%) i/s -    117.888k in   2.014176s
+                         68.923k (±34.7%) i/s -    107.525k in   2.031277s
 
 Warming up --------------------------------------
-       ilios:execute     9.000  i/100ms
- ilios:execute_async    26.000  i/100ms
+       ilios:execute    29.000  i/100ms
+ ilios:execute_async    24.554k i/100ms
 Calculating -------------------------------------
-       ilios:execute    168.780  (±28.4%) i/s -    288.000  in   2.029783s
- ilios:execute_async    453.181k (±32.9%) i/s -     10.660k in   3.549510s
+       ilios:execute    323.909  (± 7.1%) i/s -    667.000  in   2.068322s
+ ilios:execute_async    322.653k (±48.2%) i/s -    319.202k in   2.069078s
 =end

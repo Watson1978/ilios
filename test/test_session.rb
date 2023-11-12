@@ -41,7 +41,7 @@ class SessionTest < Minitest::Test
       failure_count += 1
     end
 
-    sleep(0.1)
+    future.await
 
     assert_equal(1, success_count)
     assert_equal(0, failure_count)
@@ -58,7 +58,7 @@ class SessionTest < Minitest::Test
       failure_count += 1
     end
 
-    sleep(0.1)
+    future.await
 
     assert_equal(0, success_count)
     assert_equal(1, failure_count)
@@ -84,7 +84,7 @@ class SessionTest < Minitest::Test
       failure_count += 1
     end
 
-    sleep(0.1)
+    future.await
 
     assert_equal(1, success_count)
     assert_equal(0, failure_count)
@@ -100,9 +100,10 @@ class SessionTest < Minitest::Test
         assert_kind_of(Ilios::Cassandra::Result, result)
         success_count += 1
       end
+      result_future.await
     end
 
-    sleep(0.1)
+    prepare_future.await
 
     assert_equal(1, success_count)
   end

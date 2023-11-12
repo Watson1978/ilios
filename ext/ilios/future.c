@@ -148,6 +148,22 @@ static VALUE future_result_yielder_thread(void *arg)
     return Qnil;
 }
 
+VALUE future_create(CassFuture *future, VALUE session, future_kind kind)
+{
+    CassandraFuture *cassandra_future;
+    VALUE cassandra_future_obj;
+
+    cassandra_future_obj = CREATE_FUTURE(cassandra_future);
+    cassandra_future->kind = kind;
+    cassandra_future->future = future;
+    cassandra_future->session_obj = session;
+    cassandra_future->proc_mutex = rb_mutex_new();
+    uv_sem_init(&cassandra_future->sem, 0);
+    cassandra_future->already_waited = false;
+
+    return cassandra_future_obj;
+}
+
 /**
  * Run block when future resolves to a value.
  *

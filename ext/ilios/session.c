@@ -25,23 +25,12 @@ const rb_data_type_t cassandra_session_data_type = {
 static VALUE session_prepare_async(VALUE self, VALUE query)
 {
     CassandraSession *cassandra_session;
-    CassandraFuture *cassandra_future;
     CassFuture *prepare_future;
-    VALUE cassandra_future_obj;
 
     GET_SESSION(self, cassandra_session);
 
     prepare_future = nogvl_session_prepare(cassandra_session->session, query);
-
-    cassandra_future_obj = CREATE_FUTURE(cassandra_future);
-    cassandra_future->kind = prepare_async;
-    cassandra_future->future = prepare_future;
-    cassandra_future->session_obj = self;
-    cassandra_future->proc_mutex = rb_mutex_new();
-    uv_sem_init(&cassandra_future->sem, 0);
-    cassandra_future->already_waited = false;
-
-    return cassandra_future_obj;
+    return future_create(prepare_future, self, prepare_async);
 }
 
 /**
@@ -94,25 +83,13 @@ static VALUE session_execute_async(VALUE self, VALUE statement)
 {
     CassandraSession *cassandra_session;
     CassandraStatement *cassandra_statement;
-    CassandraFuture *cassandra_future;
     CassFuture *result_future;
-    VALUE cassandra_future_obj;
 
     GET_SESSION(self, cassandra_session);
     GET_STATEMENT(statement, cassandra_statement);
 
     result_future = nogvl_session_execute(cassandra_session->session, cassandra_statement->statement);
-
-    cassandra_future_obj = CREATE_FUTURE(cassandra_future);
-    cassandra_future->kind = execute_async;
-    cassandra_future->future = result_future;
-    cassandra_future->session_obj = self;
-    cassandra_future->statement_obj = statement;
-    cassandra_future->proc_mutex = rb_mutex_new();
-    uv_sem_init(&cassandra_future->sem, 0);
-    cassandra_future->already_waited = false;
-
-    return cassandra_future_obj;
+    return future_create(result_future, self, execute_async);
 }
 
 /**

@@ -97,6 +97,7 @@ extern void Init_statement(void);
 extern void Init_result(void);
 extern void Init_future(void);
 
+extern VALUE future_create(CassFuture *future, VALUE session, future_kind kind);
 extern void nogvl_future_wait(CassFuture *future);
 extern CassFuture *nogvl_session_prepare(CassSession* session, VALUE query);
 extern CassFuture *nogvl_session_execute(CassSession* session, CassStatement* statement);

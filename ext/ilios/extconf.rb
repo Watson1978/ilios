@@ -11,6 +11,20 @@ have_func('malloc_size')
 CASSANDRA_CPP_DRIVER_INSTALL_PATH = File.expand_path('cpp-driver')
 LIBUV_INSTALL_PATH = File.expand_path('libuv')
 
+def num_cpu_cores
+  cores =
+    begin
+      if RUBY_PLATFORM.include?('darwin')
+        Integer(`sysctl -n hw.ncpu`, 10) - 1
+      else
+        Integer(`nproc`, 10) - 1
+      end
+    rescue StandardError
+      2
+    end
+  cores.positive? ? cores : 1
+end
+
 unless find_executable('cmake')
   puts '--------------------------------------------------'
   puts 'Error: cmake is required to build this gem'
@@ -25,7 +39,7 @@ unless File.exist?(LIBUV_INSTALL_PATH)
     end
   end
 
-  libuv_recipe = LibuvRecipe.new('libuv', Ilios::LIBUV_VERSION, make_command: 'make -j 3')
+  libuv_recipe = LibuvRecipe.new('libuv', Ilios::LIBUV_VERSION, make_command: "make -j #{num_cpu_cores}")
   libuv_recipe.files << {
     url: "https://github.com/libuv/libuv/archive/v#{Ilios::LIBUV_VERSION}.tar.gz"
   }
@@ -53,7 +67,7 @@ unless File.exist?(CASSANDRA_CPP_DRIVER_INSTALL_PATH)
     end
   end
 
-  cassandra_recipe = CassandraRecipe.new('cpp-driver', Ilios::CASSANDRA_CPP_DRIVER_VERSION, make_command: 'make -j 3')
+  cassandra_recipe = CassandraRecipe.new('cpp-driver', Ilios::CASSANDRA_CPP_DRIVER_VERSION, make_command: "make -j #{num_cpu_cores}")
   cassandra_recipe.files << {
     url: "https://github.com/datastax/cpp-driver/archive/#{Ilios::CASSANDRA_CPP_DRIVER_VERSION}.tar.gz"
   }

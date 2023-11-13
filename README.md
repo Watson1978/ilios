@@ -21,7 +21,7 @@ $ gem install ilios
 
 Create the keyspace in advance using the `cqlsh` command.
 
-```sh
+```cql
 CREATE KEYSPACE IF NOT EXISTS ilios
 WITH REPLICATION = {
   'class' : 'SimpleStrategy',

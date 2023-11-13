@@ -19,7 +19,7 @@ Gem::Specification.new do |spec|
   spec.metadata['homepage_uri'] = spec.homepage
   spec.metadata['source_code_uri'] = 'https://github.com/Watson1978/ilios'
   spec.metadata['bug_tracker_uri'] = 'https://github.com/Watson1978/ilios/issues'
-  spec.metadata['documentation_uri'] = 'https://www.rubydoc.info/gems/ilios'
+  spec.metadata['documentation_uri'] = "https://www.rubydoc.info/gems/ilios/#{Ilios::VERSION}"
   # spec.metadata["changelog_uri"] = "TODO: Put your gem's CHANGELOG.md URL here."
   spec.metadata['rubygems_mfa_required'] = 'true'
 

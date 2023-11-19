@@ -80,7 +80,7 @@ static VALUE result_convert_row(const CassResult *result, const CassRow *row, si
         const CassValueType type = cass_value_type(value);
 
         cass_result_column_name(result, i, &name, &name_length);
-        key = rb_str_new(name, name_length);
+        key = rb_enc_interned_str(name, name_length, rb_utf8_encoding());
 
         if (cass_value_is_null(value)) {
             rb_hash_aset(hash, key, Qnil);

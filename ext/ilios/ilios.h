@@ -7,6 +7,7 @@
 #include <uv.h>
 #include "ruby.h"
 #include "ruby/thread.h"
+#include "ruby/encoding.h"
 
 #define GET_SESSION(obj, var)   TypedData_Get_Struct(obj, CassandraSession, &cassandra_session_data_type, var)
 #define GET_STATEMENT(obj, var) TypedData_Get_Struct(obj, CassandraStatement, &cassandra_statement_data_type, var)

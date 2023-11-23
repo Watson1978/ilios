@@ -76,4 +76,25 @@ class FutureTest < Minitest::Test
 
     assert_raises(Ilios::Cassandra::ExecutionError) { future.on_failure {} }
   end
+
+  def test_complex_case
+    statement = Ilios::Cassandra.session.prepare('SELECT * FROM ilios.test;')
+    future = Ilios::Cassandra.session.execute_async(statement)
+
+    count = 0
+
+    future.on_failure do
+      count += 1
+    end
+
+    sleep(2)
+
+    future.on_success do
+      count += 1
+    end
+
+    future.await
+
+    assert_equal(1, count)
+  end
 end

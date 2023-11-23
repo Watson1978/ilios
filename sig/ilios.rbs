@@ -1,4 +1,39 @@
 module Ilios
   VERSION: String
-  # See the writing guide of rbs: https://github.com/ruby/rbs#guides
+
+  module Cassandra
+    def self.config=: (Hash[Symbol, untyped]) -> void
+    def self.session: () -> Ilios::Cassandra::Session
+    def self.connect: () -> Ilios::Cassandra::Session
+
+    class Session
+      def prepare_async: (String) -> Ilios::Cassandra::Future
+      def prepare: (String) -> Ilios::Cassandra::Statement
+
+      def execute_async: (Ilios::Cassandra::Statement) -> Ilios::Cassandra::Future
+      def execute: (Ilios::Cassandra::Statement) -> Ilios::Cassandra::Result
+    end
+
+    class Statement
+      def bind: (Hash[Symbol, untyped] | Hash[String, untyped]) -> self
+      def page_size: (Integer) -> self
+    end
+
+    class Future
+      def on_success: () { (Ilios::Cassandra::Result) -> void } -> self
+      def on_failure: () { () -> void } -> self
+      def await: () -> Ilios::Cassandra::Future
+    end
+
+    class Result
+      type row_type = Hash[String, untyped]
+
+      include Enumerable[row_type]
+
+      def each:  () { (row_type) -> void } -> void |
+                 () -> ::Enumerator[row_type, self]
+      def next_page: () -> Ilios::Cassandra::Result |
+                     () -> nil
+    end
+  end
 end

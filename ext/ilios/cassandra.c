@@ -14,7 +14,6 @@ static VALUE cassandra_connect(VALUE self)
     VALUE config;
     VALUE hosts;
     VALUE keyspace;
-    char last_error[4096] = { 0 };
 
     cassandra_session_obj = CREATE_SESSION(cassandra_session);
 
@@ -39,29 +38,24 @@ static VALUE cassandra_connect(VALUE self)
 
     for (int i = 0; i < RARRAY_LEN(hosts); i++) {
         VALUE host = RARRAY_AREF(hosts, i);
-
-        cass_cluster_set_contact_points(cassandra_session->cluster, ""); // Clear previous contact points
         cass_cluster_set_contact_points(cassandra_session->cluster, StringValueCStr(host));
-        cassandra_session->session = cass_session_new();
-        cassandra_session->connect_future =  cass_session_connect_keyspace(cassandra_session->session, cassandra_session->cluster, StringValueCStr(keyspace));
-        nogvl_future_wait(cassandra_session->connect_future);
+    }
+    cassandra_session->session = cass_session_new();
+    cassandra_session->connect_future =  cass_session_connect_keyspace(cassandra_session->session, cassandra_session->cluster, StringValueCStr(keyspace));
+    nogvl_future_wait(cassandra_session->connect_future);
 
-        if (cass_future_error_code(cassandra_session->connect_future) == CASS_OK) {
-            return cassandra_session_obj;
-        }
+    if (cass_future_error_code(cassandra_session->connect_future) != CASS_OK) {
+        char error[4096] = { 0 };
 
-        strncpy(last_error, cass_error_desc(cass_future_error_code(cassandra_session->connect_future)), sizeof(last_error) - 1);
+        strncpy(error, cass_error_desc(cass_future_error_code(cassandra_session->connect_future)), sizeof(error) - 1);
         cass_future_free(cassandra_session->connect_future);
         cass_session_free(cassandra_session->session);
-        cassandra_session->connect_future = NULL;
-        cassandra_session->session = NULL;
+        cass_cluster_free(cassandra_session->cluster);
+        rb_raise(eConnectError, "Unable to connect: %s", error);
+        return Qnil;
     }
 
-    cass_cluster_free(cassandra_session->cluster);
-    cassandra_session->cluster = NULL;
-
-    rb_raise(eConnectError, "Unable to connect: %s", last_error);
-    return Qnil;
+    return cassandra_session_obj;
 }
 
 void Init_cassandra(void)

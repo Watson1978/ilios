@@ -16,6 +16,16 @@ If bundler is not being used to manage dependencies, install the gem by executin
 $ gem install ilios
 ```
 
+## Requirements
+
+- cmake (in order to build the DataStax C/C++ Driver and libuv)
+
+## Supported
+
+- Ruby 3.0 or later
+- Cassandra 3.0 or later
+- Linux and macOS platform
+
 ## Example
 ### Basic usage
 

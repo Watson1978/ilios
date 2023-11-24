@@ -21,6 +21,7 @@ void statement_default_config(CassandraStatement *cassandra_statement)
 {
     VALUE config = rb_cvar_get(mCassandra, id_cvar_config);
 
+    cass_statement_set_request_timeout(cassandra_statement->statement, NUM2INT(rb_hash_aref(config, sym_timeout_ms)));
     cass_statement_set_paging_size(cassandra_statement->statement, NUM2INT(rb_hash_aref(config, sym_page_size)));
 }
 

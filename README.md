@@ -83,6 +83,7 @@ end
 statement = Ilios::Cassandra.session.prepare(<<~CQL)
   SELECT * FROM ilios.example
 CQL
+statement.idempotent = true
 statement.page_size = 25
 result = Ilios::Cassandra.session.execute(statement)
 result.each do |row|

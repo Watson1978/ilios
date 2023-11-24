@@ -187,6 +187,23 @@ static VALUE statement_page_size(VALUE self, VALUE page_size)
     return self;
 }
 
+/**
+ * Sets whether the statement is idempotent. Idempotent statements are able to be
+ * automatically retried after timeouts/errors and can be speculatively executed.
+ * The default is +false+.
+ *
+ * @param idempotent [Boolean] Whether the statement is idempotent.
+ * @return [Cassandra::Statement] self.
+ */
+static VALUE statement_idempotent(VALUE self, VALUE idempotent)
+{
+    CassandraStatement *cassandra_statement;
+
+    GET_STATEMENT(self, cassandra_statement);
+    cass_statement_set_is_idempotent(cassandra_statement->statement, RTEST(idempotent) ? cass_true : cass_false);
+    return self;
+}
+
 static void statement_mark(void *ptr)
 {
     CassandraStatement *cassandra_statement = (CassandraStatement *)ptr;
@@ -225,4 +242,5 @@ void Init_statement(void)
 
     rb_define_method(cStatement, "bind", statement_bind, 1);
     rb_define_method(cStatement, "page_size=", statement_page_size, 1);
+    rb_define_method(cStatement, "idempotent=", statement_idempotent, 1);
 }

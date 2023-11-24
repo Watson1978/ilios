@@ -270,6 +270,10 @@ class StatementTest < Minitest::Test
     assert_equal(5, results.to_a.size)
   end
 
+  def test_idempotent
+    assert_respond_to(@insert_statement, :idempotent=)
+  end
+
   private
 
   def insert_and_get_results

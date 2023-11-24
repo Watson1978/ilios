@@ -17,6 +17,7 @@ module Ilios
     class Statement
       def bind: (Hash[Symbol, untyped] | Hash[String, untyped]) -> self
       def page_size: (Integer) -> self
+      def idempotent: (true | false) -> self
     end
 
     class Future

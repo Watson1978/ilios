@@ -16,6 +16,15 @@ unless find_executable('cmake')
   raise
 end
 
+if RUBY_PLATFORM.include?('darwin')
+  unless find_executable('install_name_tool')
+    puts('------------------------------------------------------')
+    puts('Error: install_name_tool is required to build this gem')
+    puts('------------------------------------------------------')
+    raise
+  end
+end
+
 def num_cpu_cores
   cores =
     begin
@@ -66,12 +75,6 @@ module LibuvInstaller
       }
       libuv_recipe.cook
       if RUBY_PLATFORM.include?('darwin')
-        unless find_executable('install_name_tool')
-          puts('------------------------------------------------------')
-          puts('Error: install_name_tool is required to build this gem')
-          puts('------------------------------------------------------')
-          raise
-        end
         xsystem(
           "install_name_tool -id #{LIBUV_INSTALL_PATH}/lib/libuv.1.dylib #{LIBUV_INSTALL_PATH}/lib/libuv.1.dylib"
         )

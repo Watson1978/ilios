@@ -1,7 +1,0 @@
-#!/bin/bash
-
-prject_dir="$(cd $(dirname ${BASH_SOURCE:-$0}); pwd)/.."
-platform="$1"
-dockerfile="${platform}.dockerfile"
-
-docker run -v $prject_dir:/opt/ilios --rm -it "ilios-${platform}" bash

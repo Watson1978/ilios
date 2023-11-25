@@ -7,10 +7,12 @@ require 'securerandom'
 
 $prepared_keyspace_and_table ||= false
 
+CASSANDRA_HOST = ENV['CASSANDRA_HOST'] || '127.0.0.1'
+
 def prepare_keyspace
   Ilios::Cassandra.config = {
     keyspace: '',
-    hosts: ['127.0.0.1']
+    hosts: [CASSANDRA_HOST]
   }
 
   session = Ilios::Cassandra.connect
@@ -27,7 +29,7 @@ end
 def prepare_table
   Ilios::Cassandra.config = {
     keyspace: 'ilios',
-    hosts: ['127.0.0.1']
+    hosts: [CASSANDRA_HOST]
   }
 
   session = Ilios::Cassandra.connect
@@ -61,5 +63,5 @@ end
 
 Ilios::Cassandra.config = {
   keyspace: 'ilios',
-  hosts: ['127.0.0.1']
+  hosts: [CASSANDRA_HOST]
 }

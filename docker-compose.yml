@@ -8,10 +8,12 @@ services:
     - cassandra-data:/var/lib/cassandra
   ilios:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ./dockerfiles
+      dockerfile: ubuntu.dockerfile
     depends_on:
     - cassandra
+    environment:
+      CASSANDRA_HOST: cassandra
     command: bash -c 'sleep infinity'
     volumes:
     - "./:/opt/ilios"

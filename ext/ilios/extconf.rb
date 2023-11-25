@@ -41,6 +41,8 @@ module LibuvInstaller
   LIBUV_INSTALL_PATH = File.expand_path('libuv')
   private_constant :LIBUV_INSTALL_PATH
 
+  @@special_install_path = nil
+
   class LibuvRecipe < MiniPortileCMake
     def configure_prefix
       "-DCMAKE_INSTALL_PREFIX=#{LIBUV_INSTALL_PATH}"
@@ -79,12 +81,17 @@ module LibuvInstaller
         )
       end
     end
+    @@special_install_path = LIBUV_INSTALL_PATH
 
     FileUtils.rm_rf('ports')
     FileUtils.rm_rf('tmp')
 
     $CPPFLAGS += " -I#{LIBUV_INSTALL_PATH}/include"
     $LDFLAGS += " -L#{LIBUV_INSTALL_PATH}/lib -Wl,-rpath,#{LIBUV_INSTALL_PATH}/lib -luv"
+  end
+
+  def self.special_install_path
+    @@special_install_path
   end
 end
 
@@ -93,6 +100,12 @@ module CassandraDriverInstaller
   private_constant :CASSANDRA_CPP_DRIVER_INSTALL_PATH
 
   class CassandraRecipe < MiniPortileCMake
+    def initialize(name, version, **kwargs)
+      ENV['LIBUV_ROOT_DIR'] = LibuvInstaller.special_install_path
+
+      super(name, version, **kwargs)
+    end
+
     def configure_prefix
       "-DCMAKE_INSTALL_PREFIX=#{CASSANDRA_CPP_DRIVER_INSTALL_PATH}"
     end
@@ -129,6 +142,7 @@ module CassandraDriverInstaller
         )
       end
     end
+    @@installed_path_from_source = CASSANDRA_CPP_DRIVER_INSTALL_PATH
 
     FileUtils.rm_rf('ports')
     FileUtils.rm_rf('tmp')

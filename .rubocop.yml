@@ -41,6 +41,9 @@ Style/BlockComments:
 Style/ClassVars:
   Enabled: false
 
+Style/CommentAnnotation:
+  Enabled: false
+
 Style/DateTime:
   Enabled: false
 

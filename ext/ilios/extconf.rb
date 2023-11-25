@@ -16,13 +16,11 @@ unless find_executable('cmake')
   raise
 end
 
-if RUBY_PLATFORM.include?('darwin')
-  unless find_executable('install_name_tool')
-    puts('------------------------------------------------------')
-    puts('Error: install_name_tool is required to build this gem')
-    puts('------------------------------------------------------')
-    raise
-  end
+if RUBY_PLATFORM.include?('darwin') && !find_executable('install_name_tool')
+  puts('------------------------------------------------------')
+  puts('Error: install_name_tool is required to build this gem')
+  puts('------------------------------------------------------')
+  raise
 end
 
 def num_cpu_cores
@@ -41,6 +39,7 @@ end
 
 module LibuvInstaller
   LIBUV_INSTALL_PATH = File.expand_path('libuv')
+  private_constant :LIBUV_INSTALL_PATH
 
   class LibuvRecipe < MiniPortileCMake
     def configure_prefix
@@ -91,6 +90,7 @@ end
 
 module CassandraDriverInstaller
   CASSANDRA_CPP_DRIVER_INSTALL_PATH = File.expand_path('cpp-driver')
+  private_constant :CASSANDRA_CPP_DRIVER_INSTALL_PATH
 
   class CassandraRecipe < MiniPortileCMake
     def configure_prefix
@@ -107,12 +107,13 @@ module CassandraDriverInstaller
   def self.install_from_package
     # Install Cassandra C/C++ driver via MiniPortile2.
     # It doesn't provide pre-built package in some official repository.
-    if NativePackageInstaller.install(homebrew: 'cassandra-cpp-driver')
-      path = `brew --prefix cassandra-cpp-driver`.strip
-      $CPPFLAGS += " -I#{path}/include"
-      $LDFLAGS += " -L#{path}/lib -Wl,-rpath,#{path}/lib -lcassandra"
-      return true
-    end
+    return unless NativePackageInstaller.install(homebrew: 'cassandra-cpp-driver')
+
+    path = `brew --prefix cassandra-cpp-driver`.strip
+    $CPPFLAGS += " -I#{path}/include"
+    $LDFLAGS += " -L#{path}/lib -Wl,-rpath,#{path}/lib -lcassandra"
+
+    true
   end
 
   def self.install_from_source

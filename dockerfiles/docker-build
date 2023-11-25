@@ -1,0 +1,7 @@
+#!/bin/bash
+
+script_dir=$(cd $(dirname ${BASH_SOURCE:-$0}); pwd)
+platform="$1"
+dockerfile="${platform}.dockerfile"
+
+docker build -t "ilios-${platform}" -f ${dockerfile} ${script_dir}

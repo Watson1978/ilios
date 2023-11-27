@@ -9,20 +9,6 @@ require 'native-package-installer'
 have_func('malloc_usable_size')
 have_func('malloc_size')
 
-unless find_executable('cmake')
-  puts '--------------------------------------------------'
-  puts 'Error: cmake is required to build this gem'
-  puts '--------------------------------------------------'
-  raise
-end
-
-if RUBY_PLATFORM.include?('darwin') && !find_executable('install_name_tool')
-  puts('------------------------------------------------------')
-  puts('Error: install_name_tool is required to build this gem')
-  puts('------------------------------------------------------')
-  raise
-end
-
 def num_cpu_cores
   cores =
     begin
@@ -156,6 +142,21 @@ if (dir = with_config('--with-cassandra-driver-dir'))
   $CPPFLAGS += " -I#{dir}/include"
   $LDFLAGS += " -L#{dir}/lib -Wl,-rpath,#{dir}/lib -lcassandra"
 else
+
+  unless find_executable('cmake')
+    puts '--------------------------------------------------'
+    puts 'Error: cmake is required to build this gem'
+    puts '--------------------------------------------------'
+    raise
+  end
+
+  if RUBY_PLATFORM.include?('darwin') && !find_executable('install_name_tool')
+    puts('------------------------------------------------------')
+    puts('Error: install_name_tool is required to build this gem')
+    puts('------------------------------------------------------')
+    raise
+  end
+
   LibuvInstaller.install
   CassandraDriverInstaller.install
 end

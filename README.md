@@ -16,6 +16,20 @@ If bundler is not being used to manage dependencies, install the gem by executin
 $ gem install ilios
 ```
 
+This gem's installer will install the DataStax C/C++ Driver to the appropriate location automatically.
+However, if you prefer to install the DataStax C/C++ Driver manually, you can do so by executing:
+
+```sh
+$ bundle config set --local build.ilios --with-cpp-driver-dir=/path/to/cassandra-cpp-driver-installed-dir
+$ bundle add ilios
+```
+
+or
+
+```sh
+$ gem install ilios -- --with-cpp-driver-dir=/path/to/cassandra-cpp-driver-installed-dir
+```
+
 ## Requirements
 
 - cmake (in order to build the DataStax C/C++ Driver and libuv)

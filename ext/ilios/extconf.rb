@@ -152,7 +152,12 @@ module CassandraDriverInstaller
   end
 end
 
-LibuvInstaller.install
-CassandraDriverInstaller.install
+if (dir = with_config('--with-cassandra-driver-dir'))
+  $CPPFLAGS += " -I#{dir}/include"
+  $LDFLAGS += " -L#{dir}/lib -Wl,-rpath,#{dir}/lib -lcassandra"
+else
+  LibuvInstaller.install
+  CassandraDriverInstaller.install
+end
 
 create_makefile('ilios')

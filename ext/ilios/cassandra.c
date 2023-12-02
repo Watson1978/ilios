@@ -31,10 +31,6 @@ static VALUE cassandra_connect(VALUE self)
     if (RARRAY_LEN(hosts) == 0) {
         rb_raise(rb_eRuntimeError, "No hosts configured");
     }
-    if (RARRAY_LEN(hosts) > 1) {
-        // To distribute connections
-        hosts = rb_funcall(hosts, id_shuffle, 0);
-    }
 
     for (int i = 0; i < RARRAY_LEN(hosts); i++) {
         VALUE host = RARRAY_AREF(hosts, i);

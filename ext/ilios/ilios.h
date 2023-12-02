@@ -78,7 +78,6 @@ extern VALUE eStatementError;
 extern VALUE cQueue;
 
 extern VALUE id_cvar_config;
-extern VALUE id_shuffle;
 extern VALUE id_to_time;
 extern VALUE id_new;
 extern VALUE id_push;

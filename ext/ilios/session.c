@@ -1,15 +1,17 @@
 #include "ilios.h"
 
+static void session_mark(void *ptr);
 static void session_destroy(void *ptr);
 static size_t session_memsize(const void *ptr);
+static void session_compact(void *ptr);
 
 const rb_data_type_t cassandra_session_data_type = {
     "Ilios::Cassandra::Session",
     {
-        NULL,
+        session_mark,
         session_destroy,
         session_memsize,
-        NULL,
+        session_compact,
     },
     0, 0,
     RUBY_TYPED_FREE_IMMEDIATELY | RUBY_TYPED_WB_PROTECTED | RUBY_TYPED_FROZEN_SHAREABLE,
@@ -121,6 +123,12 @@ static VALUE session_execute(VALUE self, VALUE statement)
     return cassandra_result_obj;
 }
 
+static void session_mark(void *ptr)
+{
+    CassandraSession *cassandra_session = (CassandraSession *)ptr;
+    rb_gc_mark_movable(cassandra_session->cluster_obj);
+}
+
 static void session_destroy(void *ptr)
 {
     CassandraSession *cassandra_session = (CassandraSession *)ptr;
@@ -131,15 +139,19 @@ static void session_destroy(void *ptr)
     if (cassandra_session->connect_future) {
         cass_future_free(cassandra_session->connect_future);
     }
-    if (cassandra_session->cluster) {
-        cass_cluster_free(cassandra_session->cluster);
-    }
     xfree(cassandra_session);
 }
 
 static size_t session_memsize(const void *ptr)
 {
     return sizeof(CassandraSession);
+}
+
+static void session_compact(void *ptr)
+{
+    CassandraSession *cassandra_session = (CassandraSession *)ptr;
+
+    cassandra_session->cluster_obj = rb_gc_location(cassandra_session->cluster_obj);
 }
 
 void Init_session(void)

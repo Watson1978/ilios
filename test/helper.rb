@@ -5,17 +5,26 @@ require 'ilios'
 require 'minitest/autorun'
 require 'securerandom'
 
-$prepared_keyspace_and_table ||= false
-
 CASSANDRA_HOST = ENV['CASSANDRA_HOST'] || '127.0.0.1'
 
-def prepare_keyspace
-  Ilios::Cassandra.config = {
-    keyspace: '',
-    hosts: [CASSANDRA_HOST]
-  }
+module Ilios
+  module Cassandra
+    def self.session
+      Thread.current[:ilios_cassandra_session] ||= begin
+        cluster = Ilios::Cassandra::Cluster.new
+        cluster.keyspace('ilios')
+        cluster.hosts([CASSANDRA_HOST])
+        cluster.connect
+      end
+    end
+  end
+end
 
-  session = Ilios::Cassandra.connect
+def prepare_keyspace
+  cluster = Ilios::Cassandra::Cluster.new
+  cluster.hosts([CASSANDRA_HOST])
+
+  session = cluster.connect
   statement = session.prepare(<<~CQL)
     CREATE KEYSPACE IF NOT EXISTS ilios
     WITH REPLICATION = {
@@ -27,12 +36,11 @@ def prepare_keyspace
 end
 
 def prepare_table
-  Ilios::Cassandra.config = {
-    keyspace: 'ilios',
-    hosts: [CASSANDRA_HOST]
-  }
+  cluster = Ilios::Cassandra::Cluster.new
+  cluster.keyspace('ilios')
+  cluster.hosts([CASSANDRA_HOST])
 
-  session = Ilios::Cassandra.connect
+  session = cluster.connect
   statement = session.prepare(<<~CQL)
     CREATE TABLE IF NOT EXISTS ilios.test (
       id bigint,
@@ -54,14 +62,5 @@ def prepare_table
   session.execute(statement)
 end
 
-unless $prepared_keyspace_and_table
-  prepare_keyspace
-  prepare_table
-
-  $prepared_keyspace_and_table = true
-end
-
-Ilios::Cassandra.config = {
-  keyspace: 'ilios',
-  hosts: [CASSANDRA_HOST]
-}
+prepare_keyspace
+prepare_table

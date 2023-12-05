@@ -2,6 +2,7 @@
 
 VALUE mIlios;
 VALUE mCassandra;
+VALUE cCluster;
 VALUE cSession;
 VALUE cStatement;
 VALUE cResult;
@@ -12,18 +13,11 @@ VALUE eStatementError;
 
 VALUE cQueue;
 
-VALUE id_cvar_config;
 VALUE id_to_time;
 VALUE id_new;
 VALUE id_push;
 VALUE id_pop;
 VALUE sym_unsupported_column_type;
-VALUE sym_keyspace;
-VALUE sym_hosts;
-VALUE sym_timeout_ms;
-VALUE sym_constant_delay_ms;
-VALUE sym_max_speculative_executions;
-VALUE sym_page_size;
 
 #if defined(HAVE_MALLOC_USABLE_SIZE)
 #include <malloc.h>
@@ -66,6 +60,7 @@ void Init_ilios(void)
 {
     mIlios = rb_define_module("Ilios");
     mCassandra = rb_define_module_under(mIlios, "Cassandra");
+    cCluster = rb_define_class_under(mCassandra, "Cluster", rb_cObject);
     cSession = rb_define_class_under(mCassandra, "Session", rb_cObject);
     cStatement = rb_define_class_under(mCassandra, "Statement", rb_cObject);
     cResult = rb_define_class_under(mCassandra, "Result", rb_cObject);
@@ -76,20 +71,13 @@ void Init_ilios(void)
 
     cQueue = rb_const_get(rb_cThread, rb_intern("Queue"));
 
-    id_cvar_config = rb_intern("@@config");
     id_to_time = rb_intern("to_time");
     id_new = rb_intern("new");
     id_push = rb_intern("push");
     id_pop = rb_intern("pop");
     sym_unsupported_column_type = ID2SYM(rb_intern("unsupported_column_type"));
-    sym_keyspace = ID2SYM(rb_intern("keyspace"));
-    sym_hosts = ID2SYM(rb_intern("hosts"));
-    sym_timeout_ms = ID2SYM(rb_intern("timeout_ms"));
-    sym_constant_delay_ms = ID2SYM(rb_intern("constant_delay_ms"));
-    sym_max_speculative_executions = ID2SYM(rb_intern("max_speculative_executions"));
-    sym_page_size = ID2SYM(rb_intern("page_size"));
 
-    Init_cassandra();
+    Init_cluster();
     Init_session();
     Init_statement();
     Init_result();

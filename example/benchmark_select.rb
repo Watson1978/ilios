@@ -9,10 +9,18 @@ gemfile do
   gem 'ilios'
 end
 
-Ilios::Cassandra.config = {
-  keyspace: 'ilios',
-  hosts: ['127.0.0.1']
-}
+module Ilios
+  module Cassandra
+    def self.session
+      @session ||= begin
+        cluster = Ilios::Cassandra::Cluster.new
+        cluster.keyspace('ilios')
+        cluster.hosts(['127.0.0.1'])
+        cluster.connect
+      end
+    end
+  end
+end
 
 # Create new table
 statement = Ilios::Cassandra.session.prepare(<<~CQL)

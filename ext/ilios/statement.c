@@ -19,10 +19,7 @@ const rb_data_type_t cassandra_statement_data_type = {
 
 void statement_default_config(CassandraStatement *cassandra_statement)
 {
-    VALUE config = rb_cvar_get(mCassandra, id_cvar_config);
-
-    cass_statement_set_request_timeout(cassandra_statement->statement, NUM2INT(rb_hash_aref(config, sym_timeout_ms)));
-    cass_statement_set_paging_size(cassandra_statement->statement, NUM2INT(rb_hash_aref(config, sym_page_size)));
+    cass_statement_set_paging_size(cassandra_statement->statement, DEFAULT_PAGE_SIZE);
 }
 
 static int hash_cb(VALUE key, VALUE value, VALUE statement)
@@ -234,7 +231,6 @@ static void statement_compact(void *ptr)
 
     cassandra_statement->session_obj = rb_gc_location(cassandra_statement->session_obj);
 }
-
 
 void Init_statement(void)
 {

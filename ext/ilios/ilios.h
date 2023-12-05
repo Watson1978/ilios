@@ -9,10 +9,14 @@
 #include "ruby/thread.h"
 #include "ruby/encoding.h"
 
+#define DEFAULT_PAGE_SIZE 10000
+
+#define GET_CLUSTER(obj, var)   TypedData_Get_Struct(obj, CassandraCluster, &cassandra_cluster_data_type, var)
 #define GET_SESSION(obj, var)   TypedData_Get_Struct(obj, CassandraSession, &cassandra_session_data_type, var)
 #define GET_STATEMENT(obj, var) TypedData_Get_Struct(obj, CassandraStatement, &cassandra_statement_data_type, var)
 #define GET_RESULT(obj, var)    TypedData_Get_Struct(obj, CassandraResult, &cassandra_result_data_type, var)
 #define GET_FUTURE(obj, var)    TypedData_Get_Struct(obj, CassandraFuture, &cassandra_future_data_type, var)
+#define CREATE_CLUSTER(var)     TypedData_Make_Struct(cCluster, CassandraCluster, &cassandra_cluster_data_type, var)
 #define CREATE_SESSION(var)     TypedData_Make_Struct(cSession, CassandraSession, &cassandra_session_data_type, var)
 #define CREATE_STATEMENT(var)   TypedData_Make_Struct(cStatement, CassandraStatement, &cassandra_statement_data_type, var)
 #define CREATE_RESULT(var)      TypedData_Make_Struct(cResult, CassandraResult, &cassandra_result_data_type, var)
@@ -26,9 +30,13 @@ typedef enum {
 typedef struct
 {
     CassCluster* cluster;
-    CassFuture* connect_future;
+    VALUE keyspace;
+} CassandraCluster;
+typedef struct
+{
     CassSession* session;
-
+    CassFuture* connect_future;
+    VALUE cluster_obj;
 } CassandraSession;
 
 typedef struct
@@ -60,6 +68,7 @@ typedef struct
     bool already_waited;
 } CassandraFuture;
 
+extern const rb_data_type_t cassandra_cluster_data_type;
 extern const rb_data_type_t cassandra_session_data_type;
 extern const rb_data_type_t cassandra_statement_data_type;
 extern const rb_data_type_t cassandra_result_data_type;
@@ -67,6 +76,7 @@ extern const rb_data_type_t cassandra_future_data_type;
 
 extern VALUE mIlios;
 extern VALUE mCassandra;
+extern VALUE cCluster;
 extern VALUE cSession;
 extern VALUE cStatement;
 extern VALUE cResult;
@@ -77,20 +87,13 @@ extern VALUE eStatementError;
 
 extern VALUE cQueue;
 
-extern VALUE id_cvar_config;
 extern VALUE id_to_time;
 extern VALUE id_new;
 extern VALUE id_push;
 extern VALUE id_pop;
 extern VALUE sym_unsupported_column_type;
-extern VALUE sym_keyspace;
-extern VALUE sym_hosts;
-extern VALUE sym_timeout_ms;
-extern VALUE sym_constant_delay_ms;
-extern VALUE sym_max_speculative_executions;
-extern VALUE sym_page_size;
 
-extern void Init_cassandra(void);
+extern void Init_cluster(void);
 extern void Init_session(void);
 extern void Init_statement(void);
 extern void Init_result(void);

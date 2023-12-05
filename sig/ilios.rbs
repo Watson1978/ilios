@@ -2,9 +2,16 @@ module Ilios
   VERSION: String
 
   module Cassandra
-    def self.config=: (Hash[Symbol, untyped]) -> void
-    def self.session: () -> Ilios::Cassandra::Session
-    def self.connect: () -> Ilios::Cassandra::Session
+    class Cluster
+      def connect: () -> Ilios::Cassandra::Session
+      def hosts: (Array[String]) -> self
+      def port: (Integer) -> self
+      def keyspace: (String) -> self
+      def connect_timeout: (Integer) -> self
+      def request_timeout: (Integer) -> self
+      def resolve_timeout: (Integer) -> self
+      def constant_speculative_execution_policy: (Integer, Integer) -> self
+    end
 
     class Session
       def prepare_async: (String) -> Ilios::Cassandra::Future

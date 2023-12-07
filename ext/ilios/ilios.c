@@ -58,6 +58,8 @@ static void ilios_free(void *ptr)
 
 void Init_ilios(void)
 {
+    rb_ext_ractor_safe(true);
+
     mIlios = rb_define_module("Ilios");
     mCassandra = rb_define_module_under(mIlios, "Cassandra");
     cCluster = rb_define_class_under(mCassandra, "Cluster", rb_cObject);

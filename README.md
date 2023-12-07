@@ -118,7 +118,7 @@ end
 statement = session.prepare(<<~CQL)
   SELECT * FROM ilios.example
 CQL
-result = Ilios::Cassandra.session.execute(statement)
+result = session.execute(statement)
 ```
 
 ### Asynchronous API

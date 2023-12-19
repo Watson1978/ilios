@@ -35,5 +35,5 @@ Gem::Specification.new do |spec|
   spec.extensions << 'ext/ilios/extconf.rb'
 
   spec.add_runtime_dependency('mini_portile2', '~> 2.8')
-  spec.add_runtime_dependency('native-package-installer', '~> 1.1')
+  spec.add_runtime_dependency('native-package-installer', '~> 1.1', '>= 1.1.9')
 end

@@ -43,8 +43,9 @@ module LibuvInstaller
 
   def self.install_from_package
     NativePackageInstaller.install(
-      arch_linux: 'libuv',
+      alpine_linux: 'libuv-dev',
       alt_linux: 'libuv',
+      arch_linux: 'libuv',
       debian: 'libuv1-dev',
       freebsd: 'libuv',
       gentoo_linux: 'libuv',

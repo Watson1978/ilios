@@ -9,7 +9,7 @@ class ClusterTest < Minitest::Test
     assert_raises(TypeError) { cluster.hosts(Object.new) }
     assert_raises(TypeError) { cluster.hosts([1]) }
     assert_raises(ArgumentError) { cluster.hosts([]) }
-    assert_kind_of(Ilios::Cassandra::Cluster, cluster.hosts(['127.0.0.1']))
+    assert_kind_of(Ilios::Cassandra::Cluster, cluster.hosts([CASSANDRA_HOST]))
   end
 
   def test_port
@@ -61,7 +61,7 @@ class ClusterTest < Minitest::Test
 
     assert_raises(Ilios::Cassandra::ConnectError) { cluster.connect }
 
-    cluster.hosts(['127.0.0.1'])
+    cluster.hosts([CASSANDRA_HOST])
 
     assert_kind_of(Ilios::Cassandra::Session, cluster.connect)
   end

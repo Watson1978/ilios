@@ -9,6 +9,9 @@ on:
 permissions:
   contents: read
 
+env:
+  TESTOPTS: --verbose
+
 jobs:
   test-linux-cassandra4:
     runs-on: ubuntu-latest

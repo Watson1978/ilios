@@ -19,7 +19,7 @@ jobs:
 
     strategy:
       matrix:
-        ruby-version: ['3.0', '3.1', '3.2', '3.3.0-rc1']
+        ruby-version: ['3.0', '3.1', '3.2', '3.3']
 
     name: Linux, Cassandra 4, Ruby ${{ matrix.ruby-version }}
     steps:
@@ -43,7 +43,7 @@ jobs:
 
     strategy:
       matrix:
-        ruby-version: ['3.0', '3.1', '3.2', '3.3.0-rc1']
+        ruby-version: ['3.0', '3.1', '3.2', '3.3']
 
     name: Linux, Cassandra 3, Ruby ${{ matrix.ruby-version }}
     steps:
@@ -67,7 +67,7 @@ jobs:
 
     strategy:
       matrix:
-        ruby-version: ['3.0', '3.1', '3.2', '3.3.0-rc1']
+        ruby-version: ['3.0', '3.1', '3.2', '3.3']
 
     name: macOS, Cassandra 4, Ruby ${{ matrix.ruby-version }}
     steps:

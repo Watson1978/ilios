@@ -11,19 +11,19 @@ class IliosTest < Minitest::Test
       session = cluster.connect
 
       statement = Ilios::Cassandra.session.prepare(<<~CQL)
-      INSERT INTO ilios.test (
-        id,
-        tinyint,
-        smallint,
-        int,
-        bigint,
-        float,
-        double,
-        boolean,
-        text,
-        timestamp,
-        uuid
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        INSERT INTO ilios.test (
+          id,
+          tinyint,
+          smallint,
+          int,
+          bigint,
+          float,
+          double,
+          boolean,
+          text,
+          timestamp,
+          uuid
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
       CQL
 
       statement.bind(

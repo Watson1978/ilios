@@ -36,7 +36,7 @@ class IliosTest < Minitest::Test
           float: 6.78,
           double: 9.10,
           boolean: true,
-          text: "hello world",
+          text: 'hello world',
           timestamp: Time.now
         }
       )

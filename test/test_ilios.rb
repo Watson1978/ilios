@@ -42,8 +42,7 @@ class IliosTest < Minitest::Test
       )
       session.execute(statement)
     end
-    r.take
 
-    pass
+    assert_kind_of(Ilios::Cassandra::Result, r.take)
   end
 end

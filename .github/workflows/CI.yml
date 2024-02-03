@@ -13,43 +13,20 @@ env:
   TESTOPTS: --verbose
 
 jobs:
-  test-linux-cassandra4:
+  test-linux-cassandra:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
     strategy:
       matrix:
         ruby-version: ['3.0', '3.1', '3.2', '3.3']
+        cassandra-version: ['3', '4', '5']
 
-    name: Linux, Cassandra 4, Ruby ${{ matrix.ruby-version }}
+    name: Linux, Cassandra ${{ matrix.cassandra-version }}, Ruby ${{ matrix.ruby-version }}
     steps:
-    - name: Start Cassandra v4
+    - name: Start Cassandra v${{ matrix.cassandra-version }}
       run: |
-        docker run --name cassandra -d -p 9042:9042 cassandra:4
-    - uses: actions/checkout@v4
-    - name: Set up Ruby
-      uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: ${{ matrix.ruby-version }}
-        bundler-cache: true
-    - name: Prepare tests
-      run: bundle exec rake compile
-    - name: Run tests
-      run: bundle exec rake test
-
-  test-linux-cassandra3:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    strategy:
-      matrix:
-        ruby-version: ['3.0', '3.1', '3.2', '3.3']
-
-    name: Linux, Cassandra 3, Ruby ${{ matrix.ruby-version }}
-    steps:
-    - name: Start Cassandra v3
-      run: |
-        docker run --name cassandra -d -p 9042:9042 cassandra:3
+        docker run --name cassandra -d -p 9042:9042 cassandra:${{ matrix.cassandra-version }}
     - uses: actions/checkout@v4
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1

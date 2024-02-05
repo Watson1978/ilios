@@ -9,18 +9,22 @@ require 'native-package-installer'
 have_func('malloc_usable_size')
 have_func('malloc_size')
 
+MAX_CORES = 8
+
 def num_cpu_cores
   cores =
     begin
       if RUBY_PLATFORM.include?('darwin')
-        Integer(`sysctl -n hw.ncpu`, 10) - 1
+        Integer(`sysctl -n hw.ncpu`, 10)
       else
-        Integer(`nproc`, 10) - 1
+        Integer(`nproc`, 10)
       end
     rescue StandardError
       2
     end
-  cores.positive? ? cores : 1
+
+  return 1 if cores <= 0
+  cores >= 7 ? MAX_CORES : cores
 end
 
 module LibuvInstaller

@@ -88,7 +88,7 @@ module CassandraDriverInstaller
 
   class CassandraRecipe < MiniPortileCMake
     def initialize(name, version, **kwargs)
-      ENV['LIBUV_ROOT_DIR'] = LibuvInstaller.special_install_path
+      ENV['LIBUV_ROOT_DIR'] ||= LibuvInstaller.special_install_path
 
       super(name, version, **kwargs)
     end
@@ -99,21 +99,7 @@ module CassandraDriverInstaller
   end
 
   def self.install
-    return if install_from_package
-
     install_from_source
-  end
-
-  def self.install_from_package
-    # Install Cassandra C/C++ driver via MiniPortile2.
-    # It doesn't provide pre-built package in some official repository.
-    return unless NativePackageInstaller.install(homebrew: 'cassandra-cpp-driver')
-
-    path = `brew --prefix cassandra-cpp-driver`.strip
-    $CPPFLAGS += " -I#{path}/include"
-    $LDFLAGS += " -L#{path}/lib -Wl,-rpath,#{path}/lib -lcassandra"
-
-    true
   end
 
   def self.install_from_source
@@ -158,7 +144,13 @@ else
     raise
   end
 
-  LibuvInstaller.install
+  if (dir = with_config('--with-libuv-dir'))
+    $CPPFLAGS += " -I#{dir}/include"
+    $LDFLAGS += " -L#{dir}/lib -Wl,-rpath,#{dir}/lib -luv"
+    ENV['LIBUV_ROOT_DIR'] = dir
+  else
+    LibuvInstaller.install
+  end
   CassandraDriverInstaller.install
 end
 

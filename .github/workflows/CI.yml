@@ -59,7 +59,5 @@ jobs:
         bundler-cache: true
     - name: Prepare tests
       run: bundle exec rake compile
-    - name: Wait until Cassandra is stable
-      run: sleep 30
     - name: Run tests
       run: bundle exec rake test

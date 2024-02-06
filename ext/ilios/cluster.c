@@ -135,23 +135,6 @@ static VALUE cluster_keyspace(VALUE self, VALUE keyspace)
 }
 
 /**
- * Sets the timeout for connecting to a node.
- * Default is +5000+ milliseconds.
- *
- * @param timeout_ms [Integer] A connect timeout in milliseconds.
- * @return [Cassandra::Cluster] self.
- */
-static VALUE cluster_connect_timeout(VALUE self, VALUE timeout_ms)
-{
-    CassandraCluster *cassandra_cluster;
-
-    GET_CLUSTER(self, cassandra_cluster);
-    cass_cluster_set_connect_timeout(cassandra_cluster->cluster, NUM2UINT(timeout_ms));
-
-    return self;
-}
-
-/**
  * Sets the protocol version. The driver will automatically downgrade to the lowest supported protocol version.
  * Default is +PROTOCOL_VERSION_V4+.
  *
@@ -164,6 +147,23 @@ static VALUE cluster_protocol_version(VALUE self, VALUE version)
 
     GET_CLUSTER(self, cassandra_cluster);
     cass_cluster_set_protocol_version(cassandra_cluster->cluster, NUM2INT(version));
+
+    return self;
+}
+
+/**
+ * Sets the timeout for connecting to a node.
+ * Default is +5000+ milliseconds.
+ *
+ * @param timeout_ms [Integer] A connect timeout in milliseconds.
+ * @return [Cassandra::Cluster] self.
+ */
+static VALUE cluster_connect_timeout(VALUE self, VALUE timeout_ms)
+{
+    CassandraCluster *cassandra_cluster;
+
+    GET_CLUSTER(self, cassandra_cluster);
+    cass_cluster_set_connect_timeout(cassandra_cluster->cluster, NUM2UINT(timeout_ms));
 
     return self;
 }

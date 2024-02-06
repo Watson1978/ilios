@@ -26,6 +26,13 @@ class ClusterTest < Minitest::Test
     assert_kind_of(Ilios::Cassandra::Cluster, cluster.keyspace('ilios'))
   end
 
+  def test_protocol_version
+    cluster = Ilios::Cassandra::Cluster.new
+
+    assert_raises(TypeError) { cluster.keyspace(Object.new) }
+    assert_kind_of(Ilios::Cassandra::Cluster, cluster.protocol_version(Ilios::Cassandra::Cluster::PROTOCOL_VERSION_V4))
+  end
+
   def test_connect_timeout
     cluster = Ilios::Cassandra::Cluster.new
 

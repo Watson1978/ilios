@@ -7,6 +7,7 @@ module Ilios
       def hosts: (Array[String]) -> self
       def port: (Integer) -> self
       def keyspace: (String) -> self
+      def protocol_version: (Integer) -> self
       def connect_timeout: (Integer) -> self
       def request_timeout: (Integer) -> self
       def resolve_timeout: (Integer) -> self

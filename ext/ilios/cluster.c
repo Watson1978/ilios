@@ -152,6 +152,23 @@ static VALUE cluster_connect_timeout(VALUE self, VALUE timeout_ms)
 }
 
 /**
+ * Sets the protocol version. The driver will automatically downgrade to the lowest supported protocol version.
+ * Default is +PROTOCOL_VERSION_V4+.
+ *
+ * @param timeout_ms [Integer] A connect timeout in milliseconds.
+ * @return [Cassandra::Cluster] self.
+ */
+static VALUE cluster_protocol_version(VALUE self, VALUE version)
+{
+    CassandraCluster *cassandra_cluster;
+
+    GET_CLUSTER(self, cassandra_cluster);
+    cass_cluster_set_protocol_version(cassandra_cluster->cluster, NUM2INT(version));
+
+    return self;
+}
+
+/**
  * Sets the timeout for waiting for a response from a node.
  * Default is +12000+ milliseconds.
  *
@@ -242,9 +259,17 @@ void Init_cluster(void)
     rb_define_method(cCluster, "hosts", cluster_hosts, 1);
     rb_define_method(cCluster, "port", cluster_port, 1);
     rb_define_method(cCluster, "keyspace", cluster_keyspace, 1);
+    rb_define_method(cCluster, "protocol_version", cluster_protocol_version, 1);
     rb_define_method(cCluster, "connect_timeout", cluster_connect_timeout, 1);
     rb_define_method(cCluster, "request_timeout", cluster_request_timeout, 1);
     rb_define_method(cCluster, "resolve_timeout", cluster_resolve_timeout, 1);
     rb_define_method(cCluster, "constant_speculative_execution_policy", cluster_constant_speculative_execution_policy, 2);
 
+    rb_define_const(cCluster, "PROTOCOL_VERSION_V1", INT2NUM(CASS_PROTOCOL_VERSION_V1));
+    rb_define_const(cCluster, "PROTOCOL_VERSION_V2", INT2NUM(CASS_PROTOCOL_VERSION_V2));
+    rb_define_const(cCluster, "PROTOCOL_VERSION_V3", INT2NUM(CASS_PROTOCOL_VERSION_V3));
+    rb_define_const(cCluster, "PROTOCOL_VERSION_V4", INT2NUM(CASS_PROTOCOL_VERSION_V4));
+    rb_define_const(cCluster, "PROTOCOL_VERSION_V5", INT2NUM(CASS_PROTOCOL_VERSION_V5));
+    rb_define_const(cCluster, "PROTOCOL_VERSION_DSEV1", INT2NUM(CASS_PROTOCOL_VERSION_DSEV1));
+    rb_define_const(cCluster, "PROTOCOL_VERSION_DSEV2", INT2NUM(CASS_PROTOCOL_VERSION_DSEV2));
 }

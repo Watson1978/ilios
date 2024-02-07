@@ -33,10 +33,23 @@ static void future_thread_pool_init(future_thread_pool *pool)
 {
     pool->queue = rb_funcall(cQueue, id_new, 0);
     rb_gc_register_mark_object(pool->queue);
+}
+
+static void future_thread_pool_prepare_thread(future_thread_pool *pool)
+{
+    VALUE status;
 
     for (int i = 0; i < THREAD_MAX; i++) {
-        pool->thread[i] = rb_thread_create(future_result_yielder_thread, (void*)pool);
-        rb_gc_register_mark_object(pool->thread[i]);
+        status = Qfalse;
+
+        if (pool->thread[i]) {
+            status = rb_funcall(pool->thread[i], id_alive, 0);
+        }
+        if (!pool->thread[i] || !RTEST(status)) {
+            pool->thread[i] = rb_thread_create(future_result_yielder_thread, (void*)pool);
+            rb_funcall(pool->thread[i], id_report_on_exception, 1, Qtrue);
+            rb_gc_register_address(&pool->thread[i]);
+        }
     }
 }
 
@@ -58,6 +71,7 @@ static inline future_thread_pool *future_thread_pool_get(CassandraFuture *cassan
 static inline void future_queue_push(future_thread_pool *pool, VALUE future)
 {
     rb_funcall(pool->queue, id_push, 1, future);
+    future_thread_pool_prepare_thread(pool);
 }
 
 static inline VALUE future_queue_pop(future_thread_pool *pool)
@@ -137,7 +151,6 @@ static VALUE future_result_yielder_body(VALUE future)
 
     nogvl_future_wait(cassandra_future->future);
     return rb_mutex_synchronize(cassandra_future->proc_mutex, future_result_yielder_synchronize, future);
-
 }
 
 static VALUE future_result_yielder_ensure(VALUE future)

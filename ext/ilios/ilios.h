@@ -91,6 +91,8 @@ extern VALUE id_to_time;
 extern VALUE id_new;
 extern VALUE id_push;
 extern VALUE id_pop;
+extern VALUE id_alive;
+extern VALUE id_report_on_exception;
 extern VALUE sym_unsupported_column_type;
 
 extern void Init_cluster(void);

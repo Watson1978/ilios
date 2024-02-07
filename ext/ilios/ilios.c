@@ -17,6 +17,8 @@ VALUE id_to_time;
 VALUE id_new;
 VALUE id_push;
 VALUE id_pop;
+VALUE id_alive;
+VALUE id_report_on_exception;
 VALUE sym_unsupported_column_type;
 
 #if defined(HAVE_MALLOC_USABLE_SIZE)
@@ -77,6 +79,8 @@ void Init_ilios(void)
     id_new = rb_intern("new");
     id_push = rb_intern("push");
     id_pop = rb_intern("pop");
+    id_alive = rb_intern("alive?");
+    id_report_on_exception = rb_intern("report_on_exception=");
     sym_unsupported_column_type = ID2SYM(rb_intern("unsupported_column_type"));
 
     Init_cluster();

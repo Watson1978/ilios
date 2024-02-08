@@ -303,7 +303,7 @@ static VALUE future_await(VALUE self)
     GET_FUTURE(self, cassandra_future);
 
     if (cassandra_future->already_waited) {
-        rb_raise(eExecutionError, "It should not call twice");
+        return self;
     }
 
     if (cassandra_future->on_success_block || cassandra_future->on_failure_block) {

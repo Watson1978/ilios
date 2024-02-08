@@ -52,7 +52,6 @@ class FutureTest < Minitest::Test
     prepare_future.await
 
     assert_equal(50, count)
-    assert_raises(Ilios::Cassandra::ExecutionError) { prepare_future.await }
   end
 
   def test_on_success

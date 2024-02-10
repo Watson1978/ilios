@@ -195,35 +195,6 @@ VALUE future_create(CassFuture *future, VALUE session, future_kind kind)
     return cassandra_future_obj;
 }
 
-static VALUE future_on_success_synchronize(VALUE future)
-{
-    CassandraFuture *cassandra_future;
-    bool wakeup_thread = false;
-
-    GET_FUTURE(future, cassandra_future);
-
-    if (!cassandra_future->on_failure_block) {
-        // Invoke the callback with thread pool only once
-        wakeup_thread = true;
-    }
-
-    cassandra_future->on_success_block = rb_block_proc();
-
-    if (cass_future_ready(cassandra_future->future)) {
-        uv_sem_post(&cassandra_future->sem);
-        if (cass_future_error_code(cassandra_future->future) == CASS_OK) {
-            future_result_success_yield(cassandra_future);
-        }
-        return future;
-    }
-
-    if (wakeup_thread) {
-        future_queue_push(future_thread_pool_get(cassandra_future), future);
-    }
-
-    return future;
-}
-
 /**
  * Run block when future resolves to a value.
  *
@@ -237,6 +208,7 @@ static VALUE future_on_success_synchronize(VALUE future)
 static VALUE future_on_success(VALUE self)
 {
     CassandraFuture *cassandra_future;
+    bool wakeup_thread = false;
 
     GET_FUTURE(self, cassandra_future);
 
@@ -247,36 +219,30 @@ static VALUE future_on_success(VALUE self)
         rb_raise(rb_eArgError, "no block given");
     }
 
-    return rb_mutex_synchronize(cassandra_future->proc_mutex, future_on_success_synchronize, self);
-}
+    rb_mutex_lock(cassandra_future->proc_mutex);
 
-static VALUE future_on_failure_synchronize(VALUE future)
-{
-    CassandraFuture *cassandra_future;
-    bool wakeup_thread = false;
-
-    GET_FUTURE(future, cassandra_future);
-
-    if (!cassandra_future->on_success_block) {
+    if (!cassandra_future->on_failure_block) {
         // Invoke the callback with thread pool only once
         wakeup_thread = true;
     }
 
-    cassandra_future->on_failure_block = rb_block_proc();
+    cassandra_future->on_success_block = rb_block_proc();
 
     if (cass_future_ready(cassandra_future->future)) {
+        rb_mutex_unlock(cassandra_future->proc_mutex);
         uv_sem_post(&cassandra_future->sem);
-        if (cass_future_error_code(cassandra_future->future) != CASS_OK) {
-            future_result_failure_yield(cassandra_future);
+        if (cass_future_error_code(cassandra_future->future) == CASS_OK) {
+            future_result_success_yield(cassandra_future);
         }
-        return future;
+        return self;
     }
 
     if (wakeup_thread) {
-        future_queue_push(future_thread_pool_get(cassandra_future), future);
+        future_queue_push(future_thread_pool_get(cassandra_future), self);
     }
+    rb_mutex_unlock(cassandra_future->proc_mutex);
 
-    return future;
+    return self;
 }
 
 /**
@@ -289,6 +255,7 @@ static VALUE future_on_failure_synchronize(VALUE future)
 static VALUE future_on_failure(VALUE self)
 {
     CassandraFuture *cassandra_future;
+    bool wakeup_thread = false;
 
     GET_FUTURE(self, cassandra_future);
 
@@ -299,26 +266,30 @@ static VALUE future_on_failure(VALUE self)
         rb_raise(rb_eArgError, "no block given");
     }
 
-    return rb_mutex_synchronize(cassandra_future->proc_mutex, future_on_failure_synchronize, self);
-}
+    rb_mutex_lock(cassandra_future->proc_mutex);
 
-static VALUE future_await_synchronize(VALUE future)
-{
-    CassandraFuture *cassandra_future;
-
-    GET_FUTURE(future, cassandra_future);
-
-    if (cassandra_future->already_waited) {
-        return future;
+    if (!cassandra_future->on_success_block) {
+        // Invoke the callback with thread pool only once
+        wakeup_thread = true;
     }
 
-    if (cass_future_error_code(cassandra_future->future) == CASS_OK) {
-        future_result_success_yield(cassandra_future);
-    } else {
-        future_result_failure_yield(cassandra_future);
+    cassandra_future->on_failure_block = rb_block_proc();
+
+    if (cass_future_ready(cassandra_future->future)) {
+        rb_mutex_unlock(cassandra_future->proc_mutex);
+        uv_sem_post(&cassandra_future->sem);
+        if (cass_future_error_code(cassandra_future->future) != CASS_OK) {
+            future_result_failure_yield(cassandra_future);
+        }
+        return self;
     }
-    cassandra_future->already_waited = true;
-    return future;
+
+    if (wakeup_thread) {
+        future_queue_push(future_thread_pool_get(cassandra_future), self);
+    }
+    rb_mutex_unlock(cassandra_future->proc_mutex);
+
+    return self;
 }
 
 /**
@@ -332,7 +303,17 @@ static VALUE future_await(VALUE self)
 
     GET_FUTURE(self, cassandra_future);
 
-    return rb_mutex_synchronize(cassandra_future->proc_mutex, future_await_synchronize, self);
+    if (cassandra_future->already_waited) {
+        return self;
+    }
+
+    if (cassandra_future->on_success_block || cassandra_future->on_failure_block) {
+        nogvl_sem_wait(&cassandra_future->sem);
+    } else {
+        nogvl_future_wait(cassandra_future->future);
+    }
+    cassandra_future->already_waited = true;
+    return self;
 }
 
 static void future_mark(void *ptr)

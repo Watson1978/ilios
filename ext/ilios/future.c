@@ -303,16 +303,18 @@ static VALUE future_await(VALUE self)
 
     GET_FUTURE(self, cassandra_future);
 
+    rb_mutex_lock(cassandra_future->proc_mutex);
     if (cassandra_future->already_waited) {
+        rb_mutex_unlock(cassandra_future->proc_mutex);
         return self;
     }
+    cassandra_future->already_waited = true;
+    rb_mutex_unlock(cassandra_future->proc_mutex);
 
+    nogvl_future_wait(cassandra_future->future);
     if (cassandra_future->on_success_block || cassandra_future->on_failure_block) {
         nogvl_sem_wait(&cassandra_future->sem);
-    } else {
-        nogvl_future_wait(cassandra_future->future);
     }
-    cassandra_future->already_waited = true;
     return self;
 }
 

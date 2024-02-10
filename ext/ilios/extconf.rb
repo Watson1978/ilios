@@ -24,6 +24,7 @@ def num_cpu_cores
     end
 
   return 1 if cores <= 0
+
   cores >= 7 ? MAX_CORES : cores
 end
 

@@ -140,6 +140,7 @@ static VALUE future_result_yielder_synchronize(VALUE future)
     } else {
         future_result_failure_yield(cassandra_future);
     }
+    cassandra_future->already_waited = true;
     return Qnil;
 }
 

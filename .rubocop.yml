@@ -14,6 +14,9 @@ Bundler/GemComment:
 Layout/LineLength:
   Max: 160
 
+Layout/MultilineAssignmentLayout:
+  Enabled: false
+
 Layout/RedundantLineBreak:
   Enabled: false
 

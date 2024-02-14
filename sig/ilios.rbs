@@ -39,10 +39,10 @@ module Ilios
 
       include Enumerable[row_type]
 
-      def each:  () { (row_type) -> void } -> void |
-                 () -> ::Enumerator[row_type, self]
-      def next_page: () -> Ilios::Cassandra::Result |
-                     () -> nil
+      def each: () { (row_type) -> void } -> void
+              | () -> ::Enumerator[row_type, self]
+      def next_page: () -> Ilios::Cassandra::Result
+                   | () -> nil
     end
   end
 end

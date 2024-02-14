@@ -3,11 +3,19 @@ module Ilios
 
   module Cassandra
     class Cluster
+      PROTOCOL_VERSION_V1: Integer
+      PROTOCOL_VERSION_V2: Integer
+      PROTOCOL_VERSION_V3: Integer
+      PROTOCOL_VERSION_V4: Integer
+      PROTOCOL_VERSION_V5: Integer
+      PROTOCOL_VERSION_DSEV1: Integer
+      PROTOCOL_VERSION_DSEV2: Integer
+
       def connect: () -> Ilios::Cassandra::Session
       def hosts: (Array[String]) -> self
       def port: (Integer) -> self
       def keyspace: (String) -> self
-      def protocol_version: (Integer) -> self
+      def protocol_version: (ROTOCOL_VERSION_V1 | PROTOCOL_VERSION_V2 | PROTOCOL_VERSION_V3 | PROTOCOL_VERSION_V4 | PROTOCOL_VERSION_V5 | PROTOCOL_VERSION_DSEV1 | PROTOCOL_VERSION_DSEV2) -> self
       def connect_timeout: (Integer) -> self
       def request_timeout: (Integer) -> self
       def resolve_timeout: (Integer) -> self

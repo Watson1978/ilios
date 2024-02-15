@@ -18,6 +18,9 @@ Layout/MultilineAssignmentLayout:
 Layout/RedundantLineBreak:
   Enabled: false
 
+Layout/SingleLineBlockChain:
+  Enabled: false
+
 Lint/ConstantResolution:
   Enabled: false
 

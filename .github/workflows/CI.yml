@@ -27,6 +27,19 @@ jobs:
     - uses: r7kamura/rubocop-problem-matchers-action@v1
     - run: bundle exec rubocop --parallel
 
+  rbs:
+    runs-on: ubuntu-latest
+
+    name: RBS
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.0
+        bundler-cache: true
+    - run: bundle exec rake rbs:validate
+
   test-linux:
     runs-on: ubuntu-latest
     timeout-minutes: 10

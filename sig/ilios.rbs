@@ -15,7 +15,7 @@ module Ilios
       def hosts: (Array[String]) -> self
       def port: (Integer) -> self
       def keyspace: (String) -> self
-      def protocol_version: (ROTOCOL_VERSION_V1 | PROTOCOL_VERSION_V2 | PROTOCOL_VERSION_V3 | PROTOCOL_VERSION_V4 | PROTOCOL_VERSION_V5 | PROTOCOL_VERSION_DSEV1 | PROTOCOL_VERSION_DSEV2) -> self
+      def protocol_version: (Integer) -> self
       def connect_timeout: (Integer) -> self
       def request_timeout: (Integer) -> self
       def resolve_timeout: (Integer) -> self
@@ -31,7 +31,7 @@ module Ilios
     end
 
     class Statement
-      def bind: (Hash[Symbol, untyped] | Hash[String, untyped]) -> self
+      def bind: (Hash[Symbol | String, untyped]) -> self
       def page_size=: (Integer) -> self
       def idempotent=: (true | false) -> self
     end
@@ -39,7 +39,7 @@ module Ilios
     class Future
       def on_success: () { (Ilios::Cassandra::Result) -> void } -> self
       def on_failure: () { () -> void } -> self
-      def await: () -> Ilios::Cassandra::Future
+      def await: () -> self
     end
 
     class Result
@@ -49,8 +49,7 @@ module Ilios
 
       def each: () { (row_type) -> void } -> void
               | () -> ::Enumerator[row_type, self]
-      def next_page: () -> Ilios::Cassandra::Result
-                   | () -> nil
+      def next_page: () -> (Ilios::Cassandra::Result | nil)
     end
   end
 end

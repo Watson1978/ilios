@@ -64,6 +64,7 @@ Style/DateTime:
 Style/DisableCopsWithinSourceCodeDirective:
   AllowedCops:
     - Style/StringHashKeys
+    - Style/GlobalVars
 
 Style/Documentation:
   Exclude:

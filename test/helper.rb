@@ -80,3 +80,5 @@ end
 
 prepare_keyspace
 prepare_table
+
+Ilios::Cassandra.log_level(Ilios::Cassandra::LOG_TRACE)

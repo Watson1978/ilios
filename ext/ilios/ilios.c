@@ -58,6 +58,18 @@ static void ilios_free(void *ptr)
     }
 }
 
+/**
+ *  Sets the log level.
+ * Default is +LOG_ERROR+.
+ *
+ * @return [Cassandra] self.
+ */
+static VALUE cassandra_set_log_level(VALUE self, VALUE log_level)
+{
+    cass_log_set_level(NUM2INT(log_level));
+    return self;
+}
+
 void Init_ilios(void)
 {
     rb_ext_ractor_safe(true);
@@ -82,6 +94,15 @@ void Init_ilios(void)
     id_alive = rb_intern("alive?");
     id_report_on_exception = rb_intern("report_on_exception=");
     sym_unsupported_column_type = ID2SYM(rb_intern("unsupported_column_type"));
+
+    rb_define_module_function(mCassandra, "log_level", cassandra_set_log_level, 1);
+    rb_define_const(mCassandra, "LOG_DISABLED", INT2NUM(CASS_LOG_DISABLED));
+    rb_define_const(mCassandra, "LOG_CRITICAL", INT2NUM(CASS_LOG_CRITICAL));
+    rb_define_const(mCassandra, "LOG_ERROR", INT2NUM(CASS_LOG_ERROR));
+    rb_define_const(mCassandra, "LOG_WARN", INT2NUM(CASS_LOG_WARN));
+    rb_define_const(mCassandra, "LOG_INFO", INT2NUM(CASS_LOG_INFO));
+    rb_define_const(mCassandra, "LOG_DEBUG", INT2NUM(CASS_LOG_DEBUG));
+    rb_define_const(mCassandra, "LOG_TRACE", INT2NUM(CASS_LOG_TRACE));
 
     Init_cluster();
     Init_session();

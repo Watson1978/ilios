@@ -78,6 +78,9 @@ Style/DocumentationMethod:
     - 'example/**/*'
     - 'ext/ilios/extconf.rb'
 
+Style/FetchEnvVar:
+  Enabled: false
+
 Style/GlobalVars:
   Exclude:
     - 'ext/ilios/extconf.rb'

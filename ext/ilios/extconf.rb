@@ -159,4 +159,7 @@ else
   CassandraDriverInstaller.install
 end
 
+$CPPFLAGS += " #{ENV['CPPFLAGS']}"
+$LDFLAGS += " #{ENV['LDFLAGS']}"
+
 create_makefile('ilios')

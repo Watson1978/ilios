@@ -81,5 +81,5 @@ end
 prepare_keyspace
 prepare_table
 
-$default_test_log_level = Ilios::Cassandra::LOG_TRACE
+$default_test_log_level = Ilios::Cassandra::LOG_ERROR
 Ilios::Cassandra.log_level($default_test_log_level)

@@ -58,6 +58,9 @@ Style/ClassVars:
 Style/CommentAnnotation:
   Enabled: false
 
+Style/Copyright:
+  Enabled: false
+
 Style/DateTime:
   Enabled: false
 

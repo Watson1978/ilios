@@ -35,7 +35,6 @@ typedef struct
 typedef struct
 {
     CassSession* session;
-    CassFuture* connect_future;
     VALUE cluster_obj;
 } CassandraSession;
 

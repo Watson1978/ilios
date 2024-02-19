@@ -49,6 +49,7 @@ static VALUE cluster_connect(VALUE self)
 {
     CassandraSession *cassandra_session;
     CassandraCluster *cassandra_cluster;
+    CassFuture* connect_future;
     VALUE cassandra_session_obj;
     const char *keyspace = "";
 
@@ -60,16 +61,18 @@ static VALUE cluster_connect(VALUE self)
     cassandra_session_obj = CREATE_SESSION(cassandra_session);
     cassandra_session->cluster_obj = self;
     cassandra_session->session = cass_session_new();
-    cassandra_session->connect_future = cass_session_connect_keyspace(cassandra_session->session, cassandra_cluster->cluster, keyspace);
-    nogvl_future_wait(cassandra_session->connect_future);
+    connect_future = cass_session_connect_keyspace(cassandra_session->session, cassandra_cluster->cluster, keyspace);
+    nogvl_future_wait(connect_future);
 
-    if (cass_future_error_code(cassandra_session->connect_future) != CASS_OK) {
+    if (cass_future_error_code(connect_future) != CASS_OK) {
         char error[4096] = { 0 };
 
-        strncpy(error, cass_error_desc(cass_future_error_code(cassandra_session->connect_future)), sizeof(error) - 1);
+        strncpy(error, cass_error_desc(cass_future_error_code(connect_future)), sizeof(error) - 1);
+        cass_future_free(connect_future);
         rb_raise(eConnectError, "Unable to connect: %s", error);
         return Qnil;
     }
+    cass_future_free(connect_future);
 
     return cassandra_session_obj;
 }

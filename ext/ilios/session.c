@@ -136,9 +136,6 @@ static void session_destroy(void *ptr)
     if (cassandra_session->session) {
         cass_session_free(cassandra_session->session);
     }
-    if (cassandra_session->connect_future) {
-        cass_future_free(cassandra_session->connect_future);
-    }
     xfree(cassandra_session);
 }
 

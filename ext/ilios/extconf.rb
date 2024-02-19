@@ -4,7 +4,6 @@ require File.expand_path('../../lib/ilios/version', __dir__)
 require 'fileutils'
 require 'mini_portile2'
 require 'mkmf'
-require 'native-package-installer'
 
 have_func('malloc_usable_size')
 have_func('malloc_size')
@@ -41,23 +40,7 @@ module LibuvInstaller
   end
 
   def self.install
-    return if install_from_package
-
     install_from_source
-  end
-
-  def self.install_from_package
-    NativePackageInstaller.install(
-      alpine_linux: 'libuv-dev',
-      alt_linux: 'libuv',
-      arch_linux: 'libuv',
-      debian: 'libuv1-dev',
-      freebsd: 'libuv',
-      gentoo_linux: 'libuv',
-      homebrew: 'libuv',
-      macports: 'libuv',
-      redhat: 'libuv-devel'
-    )
   end
 
   def self.install_from_source

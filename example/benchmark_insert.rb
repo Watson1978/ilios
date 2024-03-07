@@ -63,8 +63,6 @@ class BenchmarkCassandra
   end
 
   def run_execute_async(x)
-    futures = []
-
     x.report('cassandra-driver:execute_async') do
       future = @session.execute_async(
         statement,
@@ -78,16 +76,7 @@ class BenchmarkCassandra
       )
       future.on_success do |rows|
       end
-
-      futures << future
-
-      if futures.size > 100
-        tmp = futures.slice!(0..10)
-        Cassandra::Future.all(*tmp).get
-      end
     end
-
-    Cassandra::Future.all(*futures).get
   end
 
   def statement
@@ -116,8 +105,6 @@ class BenchmarkIlios
   end
 
   def run_execute_async(x)
-    futures = []
-
     x.report('ilios:execute_async') do
       statement.bind(
         {
@@ -129,13 +116,7 @@ class BenchmarkIlios
       future = Ilios::Cassandra.session.execute_async(statement)
       future.on_success do |results|
       end
-
-      futures << future
-
-      futures.slice!(0..10).each(&:await) if futures.size > 100
     end
-
-    futures.each(&:await)
   end
 
   def statement
@@ -149,22 +130,22 @@ class BenchmarkIlios
   end
 end
 
-Benchmark.ips do |x|
-  x.warmup = 0
-  x.time = 10
-  BenchmarkCassandra.new.run_execute(x)
-  BenchmarkCassandra.new.run_execute_async(x)
-end
+case ENV['RUN']
+when 'cassandra'
+  Benchmark.ips do |x|
+    x.warmup = 0
+    x.time = 20
+    BenchmarkCassandra.new.run_execute(x)
+    BenchmarkCassandra.new.run_execute_async(x)
+  end
 
-GC.start
-sleep 20
-
-puts ''
-Benchmark.ips do |x|
-  x.warmup = 0
-  x.time = 10
-  BenchmarkIlios.new.run_execute(x)
-  BenchmarkIlios.new.run_execute_async(x)
+when 'ilios', nil
+  Benchmark.ips do |x|
+    x.warmup = 0
+    x.time = 20
+    BenchmarkIlios.new.run_execute(x)
+    BenchmarkIlios.new.run_execute_async(x)
+  end
 end
 
 =begin
@@ -176,13 +157,17 @@ end
 - Ruby: ruby 3.3.0
 
 ## Results
+### cassandra-driver
+$ RUN=cassandra ruby benchmark_insert.rb
 Calculating -------------------------------------
 cassandra-driver:execute
-                          4.121k (±19.4%) i/s -     39.035k in   9.979254s
+                          4.022k (±19.1%) i/s -     76.144k in  19.956985s
 cassandra-driver:execute_async
-                         18.461k (±20.5%) i/s -    132.226k in   9.951913s
+                         45.162k (±20.6%) i/s -    514.720k in  19.872873s
 
+### ilios
+$ RUN=ilios ruby benchmark_insert.rb
 Calculating -------------------------------------
-       ilios:execute      4.880k (±23.8%) i/s -     45.928k in   9.978697s
- ilios:execute_async    348.102k (±53.6%) i/s -    966.952k in   9.745057s
+       ilios:execute      4.857k (±24.0%) i/s -     91.235k in  19.960159s
+ ilios:execute_async    351.393k (±55.5%) i/s -      2.029M in  19.462660s
 =end

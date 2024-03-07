@@ -74,22 +74,11 @@ class BenchmarkCassandra
   end
 
   def run_execute_async(x)
-    futures = []
-
     x.report('cassandra-driver:execute_async') do
       future = @session.execute_async(statement)
       future.on_success do |rows|
       end
-
-      futures << future
-
-      if futures.size > 100
-        tmp = futures.slice!(0..10)
-        Cassandra::Future.all(*tmp).get
-      end
     end
-
-    Cassandra::Future.all(*futures).get
   end
 
   def statement
@@ -107,21 +96,13 @@ class BenchmarkIlios
   end
 
   def run_execute_async(x)
-    futures = []
-
     x.report('ilios:execute_async') do
       future = Ilios::Cassandra.session.execute_async(statement)
       future.on_success do |results|
         results.each do |row|
         end
       end
-
-      futures << future
-
-      futures.slice!(0..10).each(&:await) if futures.size > 100
     end
-
-    futures.each(&:await)
   end
 
   def statement
@@ -131,22 +112,22 @@ class BenchmarkIlios
   end
 end
 
-Benchmark.ips do |x|
-  x.warmup = 0
-  x.time = 10
-  BenchmarkCassandra.new.run_execute(x)
-  BenchmarkCassandra.new.run_execute_async(x)
-end
+case ENV['RUN']
+when 'cassandra'
+  Benchmark.ips do |x|
+    x.warmup = 0
+    x.time = 20
+    BenchmarkCassandra.new.run_execute(x)
+    BenchmarkCassandra.new.run_execute_async(x)
+  end
 
-GC.start
-sleep 20
-
-puts ''
-Benchmark.ips do |x|
-  x.warmup = 0
-  x.time = 10
-  BenchmarkIlios.new.run_execute(x)
-  BenchmarkIlios.new.run_execute_async(x)
+when 'ilios', nil
+  Benchmark.ips do |x|
+    x.warmup = 0
+    x.time = 20
+    BenchmarkIlios.new.run_execute(x)
+    BenchmarkIlios.new.run_execute_async(x)
+  end
 end
 
 =begin
@@ -158,13 +139,17 @@ end
 - Ruby: ruby 3.3.0
 
 ## Results
+### cassandra-driver
+$ RUN=cassandra ruby benchmark_select.rb
 Calculating -------------------------------------
 cassandra-driver:execute
-                        139.571 (± 7.2%) i/s -      1.387k in   9.998314s
+                        140.897 (± 9.2%) i/s -      2.794k in  19.995255s
 cassandra-driver:execute_async
-                         11.554k (±86.6%) i/s -      2.467k in  10.001188s
+                         95.534k (±17.8%) i/s -      1.003M in  20.788894s
 
+### ilios
+RUN=ilios ruby benchmark_select.rb
 Calculating -------------------------------------
-       ilios:execute    327.715 (±16.5%) i/s -      3.187k in   9.994403s
- ilios:execute_async    454.625k (±78.4%) i/s -     10.161k in   9.996146s
+       ilios:execute    327.603 (±15.6%) i/s -      6.400k in  19.991734s
+ ilios:execute_async    421.849k (±80.8%) i/s -     19.441k in  19.987868s
 =end

@@ -1,6 +1,7 @@
 #include "ilios.h"
 
 #define THREAD_MAX 5
+#define QUEUE_MAX 100
 
 typedef struct
 {
@@ -31,7 +32,7 @@ const rb_data_type_t cassandra_future_data_type = {
 
 static void future_thread_pool_init(future_thread_pool *pool)
 {
-    pool->queue = rb_funcall(cQueue, id_new, 0);
+    pool->queue = rb_funcall(cSizedQueue, id_new, 1, INT2NUM(QUEUE_MAX));
     rb_gc_register_mark_object(pool->queue);
 }
 

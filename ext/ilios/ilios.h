@@ -84,7 +84,7 @@ extern VALUE eConnectError;
 extern VALUE eExecutionError;
 extern VALUE eStatementError;
 
-extern VALUE cQueue;
+extern VALUE cSizedQueue;
 
 extern VALUE id_to_time;
 extern VALUE id_new;

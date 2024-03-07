@@ -5,6 +5,7 @@ gemfile do
   source 'https://rubygems.org'
   gem 'benchmark-ips'
   gem 'sorted_set'
+  gem 'bigdecimal'
   gem 'cassandra-driver', require: 'cassandra'
   gem 'ilios'
 end
@@ -81,6 +82,11 @@ class BenchmarkCassandra
       end
 
       futures << future
+
+      if futures.size > 100
+        tmp = futures.slice!(0..10)
+        Cassandra::Future.all(*tmp).get
+      end
     end
 
     Cassandra::Future.all(*futures).get
@@ -111,6 +117,8 @@ class BenchmarkIlios
       end
 
       futures << future
+
+      futures.slice!(0..10).each(&:await) if futures.size > 100
     end
 
     futures.each(&:await)
@@ -124,8 +132,8 @@ class BenchmarkIlios
 end
 
 Benchmark.ips do |x|
-  x.warmup = 1
-  x.time = 2
+  x.warmup = 0
+  x.time = 10
   BenchmarkCassandra.new.run_execute(x)
   BenchmarkCassandra.new.run_execute_async(x)
 end
@@ -135,8 +143,8 @@ sleep 20
 
 puts ''
 Benchmark.ips do |x|
-  x.warmup = 1
-  x.time = 2
+  x.warmup = 0
+  x.time = 10
   BenchmarkIlios.new.run_execute(x)
   BenchmarkIlios.new.run_execute_async(x)
 end
@@ -144,26 +152,19 @@ end
 =begin
 ## Environment
 - OS: Manjaro Linux x86_64
+- Kernel: 6.7.7-1-MANJARO
 - CPU: AMD Ryzen 9 7940HS
 - Compiler: gcc 13.2.1
-- Ruby: ruby 3.2.2
+- Ruby: ruby 3.3.0
 
 ## Results
-Warming up --------------------------------------
-cassandra-driver:execute
-                        12.000  i/100ms
-cassandra-driver:execute_async
-                         6.325k i/100ms
 Calculating -------------------------------------
 cassandra-driver:execute
-                         50.608  (±23.7%) i/s -     96.000  in   2.024429s
+                        139.571 (± 7.2%) i/s -      1.387k in   9.998314s
 cassandra-driver:execute_async
-                         68.923k (±34.7%) i/s -    107.525k in   2.031277s
+                         11.554k (±86.6%) i/s -      2.467k in  10.001188s
 
-Warming up --------------------------------------
-       ilios:execute    29.000  i/100ms
- ilios:execute_async    24.554k i/100ms
 Calculating -------------------------------------
-       ilios:execute    323.909  (± 7.1%) i/s -    667.000  in   2.068322s
- ilios:execute_async    322.653k (±48.2%) i/s -    319.202k in   2.069078s
+       ilios:execute    327.715 (±16.5%) i/s -      3.187k in   9.994403s
+ ilios:execute_async    454.625k (±78.4%) i/s -     10.161k in   9.996146s
 =end

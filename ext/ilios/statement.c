@@ -170,7 +170,7 @@ static VALUE statement_bind(VALUE self, VALUE hash)
 }
 
 /**
- * Sets the statement's page size.
+ * Sets the statement's page size. The default is +10000+.
  *
  * @param page_size [Integer] A page size.
  * @return [Cassandra::Statement] self.

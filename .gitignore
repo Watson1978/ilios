@@ -12,6 +12,7 @@
 /ext/ilios/*.o
 /ext/ilios/mkmf.log
 /ext/ilios/Makefile
+/ext/ilios/compile_flags.txt
 /ext/ilios/cpp-driver
 /ext/ilios/libuv
 /ext/ilios/ports

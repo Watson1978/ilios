@@ -4,7 +4,9 @@ require 'bundler/gem_tasks'
 require 'rake/extensiontask'
 require 'rake/testtask'
 
+desc 'Run tests'
 task test: :compile
+
 task default: :test
 
 Rake::ExtensionTask.new('ilios') do |ext|

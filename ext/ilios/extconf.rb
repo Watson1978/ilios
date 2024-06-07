@@ -93,7 +93,7 @@ module CassandraDriverInstaller
     def initialize(name, version, **kwargs)
       ENV['LIBUV_ROOT_DIR'] ||= LibuvInstaller.special_install_path
 
-      super(name, version, **kwargs)
+      super
     end
 
     def configure_prefix

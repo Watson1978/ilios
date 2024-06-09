@@ -22,7 +22,7 @@ jobs:
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.0
+        ruby-version: 3.3
         bundler-cache: true
     - uses: r7kamura/rubocop-problem-matchers-action@v1
     - run: bundle exec rubocop --parallel

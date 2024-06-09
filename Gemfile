@@ -12,4 +12,6 @@ gem 'rbs', '~> 3.4'
 gem 'rubocop', '~> 1.57'
 gem 'rubocop-minitest', '~> 0.33.0'
 gem 'rubocop-performance', '~> 1.19'
-gem 'rubocop-rake', '~> 0.6.0'
+gem 'rubocop-rake', '~> 0.6'
+
+gem 'rubocop-on-rbs', '~> 0.2' if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.1')

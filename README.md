@@ -40,7 +40,7 @@ $ gem install ilios -- --with-libuv-dir=/path/to/libuv-installed-dir --with-cass
 
 ## Supported
 
-- Ruby 3.0 or later
+- Ruby 3.1 or later
 - Cassandra 3.0 or later
 - Linux and macOS platform
 

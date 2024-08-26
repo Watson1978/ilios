@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.description = 'Cassandra driver written by C language'
   spec.homepage = 'https://github.com/Watson1978/ilios'
   spec.license = 'MIT'
-  spec.required_ruby_version = '>= 3.0.0'
+  spec.required_ruby_version = '>= 3.1.0'
 
   spec.requirements << 'cmake'
 

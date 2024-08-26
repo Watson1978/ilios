@@ -6,7 +6,7 @@ require:
 
 AllCops:
     EnabledByDefault: true
-    TargetRubyVersion: 3.0
+    TargetRubyVersion: 3.1
 
 Bundler/GemComment:
   Enabled: false
@@ -90,6 +90,9 @@ Style/GlobalVars:
   Exclude:
     - 'ext/ilios/extconf.rb'
     - 'test/helper.rb'
+
+Style/HashSyntax:
+  EnforcedShorthandSyntax: either
 
 Style/IpAddresses:
   Enabled: false

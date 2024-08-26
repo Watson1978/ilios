@@ -37,6 +37,8 @@ $ gem install ilios -- --with-libuv-dir=/path/to/libuv-installed-dir --with-cass
 ## Requirements
 
 - cmake (in order to build the DataStax C/C++ Driver and libuv)
+- C/C++ compiler
+- install_name_tool (macOS only)
 
 ## Supported
 

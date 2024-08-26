@@ -1,31 +1,13 @@
 # frozen_string_literal: true
 
 require File.expand_path('../../lib/ilios/version', __dir__)
+require 'etc'
 require 'fileutils'
 require 'mini_portile2'
 require 'mkmf'
 
 have_func('malloc_usable_size')
 have_func('malloc_size')
-
-MAX_CORES = 8
-
-def num_cpu_cores
-  cores =
-    begin
-      if RUBY_PLATFORM.include?('darwin')
-        Integer(`sysctl -n hw.ncpu`, 10)
-      else
-        Integer(`nproc`, 10)
-      end
-    rescue StandardError
-      2
-    end
-
-  return 1 if cores <= 0
-
-  cores >= 7 ? MAX_CORES : cores
-end
 
 def create_compile_flags_txt
   cppflags = $CPPFLAGS.split
@@ -60,7 +42,7 @@ module LibuvInstaller
 
   def self.install_from_source
     unless File.exist?(LIBUV_INSTALL_PATH)
-      libuv_recipe = LibuvRecipe.new('libuv', Ilios::LIBUV_VERSION, make_command: "make -j #{num_cpu_cores}")
+      libuv_recipe = LibuvRecipe.new('libuv', Ilios::LIBUV_VERSION, make_command: "make -j #{Etc.nprocessors}")
       libuv_recipe.files << {
         url: "https://github.com/libuv/libuv/archive/v#{Ilios::LIBUV_VERSION}.tar.gz"
       }
@@ -107,7 +89,7 @@ module CassandraDriverInstaller
 
   def self.install_from_source
     unless File.exist?(CASSANDRA_CPP_DRIVER_INSTALL_PATH)
-      cassandra_recipe = CassandraRecipe.new('cpp-driver', Ilios::CASSANDRA_CPP_DRIVER_VERSION, make_command: "make -j #{num_cpu_cores}")
+      cassandra_recipe = CassandraRecipe.new('cpp-driver', Ilios::CASSANDRA_CPP_DRIVER_VERSION, make_command: "make -j #{Etc.nprocessors}")
       cassandra_recipe.files << {
         url: "https://github.com/datastax/cpp-driver/archive/#{Ilios::CASSANDRA_CPP_DRIVER_VERSION}.tar.gz"
       }

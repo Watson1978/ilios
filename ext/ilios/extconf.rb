@@ -34,6 +34,7 @@ module LibuvInstaller
     def configure_prefix
       "-DCMAKE_INSTALL_PREFIX=#{LIBUV_INSTALL_PATH}"
     end
+
     def cmake_compile_flags
       flags = super
       flags << "-DCMAKE_POLICY_VERSION_MINIMUM='3.5'"
@@ -85,6 +86,7 @@ module CassandraDriverInstaller
     def configure_prefix
       "-DCMAKE_INSTALL_PREFIX=#{CASSANDRA_CPP_DRIVER_INSTALL_PATH}"
     end
+
     def cmake_compile_flags
       flags = super
       flags << "-DCMAKE_POLICY_VERSION_MINIMUM='3.5'"

@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.0.2
+
+- Fix install error with CMake 4.x
+
 ## 1.0.1
 
 - Update libuv version to 1.50.0 (#18)

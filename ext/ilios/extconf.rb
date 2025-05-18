@@ -9,21 +9,6 @@ require 'mkmf'
 have_func('malloc_usable_size')
 have_func('malloc_size')
 
-def create_compile_flags_txt
-  cppflags = $CPPFLAGS.split
-  include_flags = cppflags.select { |flag| flag.start_with?('-I') }
-  define_flags = cppflags.select { |flag| flag.start_with?('-D') } + $defs
-
-  File.open('compile_flags.txt', 'w') do |f|
-    include_flags.each { |flag| f.puts(flag) }
-    f.puts("-I#{Dir.pwd}")
-    f.puts("-I#{RbConfig::CONFIG['rubyhdrdir']}")
-    f.puts("-I#{RbConfig::CONFIG['rubyhdrdir']}/ruby/backward")
-    f.puts("-I#{RbConfig::CONFIG['rubyarchhdrdir']}")
-    define_flags.each { |flag| f.puts(flag) }
-  end
-end
-
 module LibuvInstaller
   LIBUV_INSTALL_PATH = File.expand_path('libuv')
   private_constant :LIBUV_INSTALL_PATH
@@ -153,4 +138,6 @@ $CPPFLAGS += " #{ENV['CPPFLAGS']}"
 $LDFLAGS += " #{ENV['LDFLAGS']}"
 
 create_makefile('ilios')
-create_compile_flags_txt
+
+require 'extconf_compile_commands_json'
+ExtconfCompileCommandsJson.generate!

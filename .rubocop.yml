@@ -11,6 +11,9 @@ AllCops:
 Bundler/GemComment:
   Enabled: false
 
+Gemspec/DependencyVersion:
+  Enabled: false
+
 Layout/LineLength:
   Max: 160
 

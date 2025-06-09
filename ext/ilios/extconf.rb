@@ -5,6 +5,7 @@ require 'etc'
 require 'fileutils'
 require 'mini_portile2'
 require 'mkmf'
+require 'rbconfig'
 
 have_func('malloc_usable_size')
 have_func('malloc_size')
@@ -75,6 +76,10 @@ module CassandraDriverInstaller
     def cmake_compile_flags
       flags = super
       flags << "-DCMAKE_POLICY_VERSION_MINIMUM='3.5'"
+      # Avoid "Unsupported compiler: AppleClang" on macOS
+      flags << '-DCMAKE_CXX_COMPILER_ID=Clang' if RUBY_PLATFORM.include?('darwin') && RbConfig::CONFIG['CC'].include?('clang')
+
+      flags
     end
   end
 

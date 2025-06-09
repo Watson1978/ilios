@@ -78,7 +78,7 @@ module CassandraDriverInstaller
       flags << "-DCMAKE_POLICY_VERSION_MINIMUM='3.5'"
       # Avoid "Unsupported compiler: AppleClang" on macOS
       if RUBY_PLATFORM.include?('darwin') && RbConfig::CONFIG['CC'].include?('clang')
-        flags << "-DCMAKE_CXX_FLAGS='-Wno-c++11-extensions'"
+        flags << "-DCMAKE_CXX_FLAGS='-Wno-error -Wno-c++11-extensions'"
         flags << '-DCMAKE_CXX_COMPILER_ID=Clang'
       end
 

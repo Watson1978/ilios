@@ -7,6 +7,6 @@ module Ilios
   CASSANDRA_CPP_DRIVER_VERSION = '2.17.1'
   public_constant :CASSANDRA_CPP_DRIVER_VERSION
 
-  LIBUV_VERSION = '1.50.0'
+  LIBUV_VERSION = '1.51.0'
   public_constant :LIBUV_VERSION
 end

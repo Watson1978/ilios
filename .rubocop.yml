@@ -110,6 +110,10 @@ Style/IpAddresses:
 Style/InlineComment:
   Enabled: false
 
+Style/MethodCallWithArgsParentheses:
+  Exclude:
+    - 'ext/ilios/extconf.rb'
+
 Style/MissingElse:
   Enabled: false
 

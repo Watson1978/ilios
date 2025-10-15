@@ -43,6 +43,13 @@ class IliosTest < Minitest::Test
       session.execute(statement)
     end
 
-    assert_kind_of(Ilios::Cassandra::Result, r.take)
+    result =
+      if r.respond_to?(:take)
+        r.take
+      else
+        r.join
+      end
+
+    assert_kind_of(Ilios::Cassandra::Result, result)
   end
 end

@@ -34,6 +34,5 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
   spec.extensions << 'ext/ilios/extconf.rb'
 
-  spec.add_dependency('extconf_compile_commands_json')
   spec.add_dependency('mini_portile2', '~> 2.8')
 end

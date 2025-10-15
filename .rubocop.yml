@@ -11,6 +11,9 @@ AllCops:
 Bundler/GemComment:
   Enabled: false
 
+Bundler/GemVersion:
+  Enabled: false
+
 Gemspec/DependencyVersion:
   Enabled: false
 
@@ -31,6 +34,10 @@ Lint/ConstantResolution:
 
 Lint/EmptyBlock:
   Enabled: false
+
+Lint/SuppressedException:
+  Exclude:
+    - 'ext/ilios/extconf.rb'
 
 Metrics/AbcSize:
   Enabled: false

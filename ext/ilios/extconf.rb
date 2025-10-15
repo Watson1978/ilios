@@ -144,5 +144,8 @@ $LDFLAGS += " #{ENV['LDFLAGS']}"
 
 create_makefile('ilios')
 
-require 'extconf_compile_commands_json'
-ExtconfCompileCommandsJson.generate!
+begin
+  require('extconf_compile_commands_json')
+  ExtconfCompileCommandsJson.generate!
+rescue LoadError
+end

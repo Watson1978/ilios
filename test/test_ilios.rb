@@ -47,7 +47,7 @@ class IliosTest < Minitest::Test
       if r.respond_to?(:take)
         r.take
       else
-        r.join
+        r.value
       end
 
     assert_kind_of(Ilios::Cassandra::Result, result)

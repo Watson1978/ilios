@@ -117,6 +117,9 @@ Style/MethodCallWithArgsParentheses:
 Style/MissingElse:
   Enabled: false
 
+Style/OneClassPerFile:
+  Enabled: false
+
 Style/TopLevelMethodDefinition:
   Enabled: false
 

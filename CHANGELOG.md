@@ -1,5 +1,23 @@
 # Change Log
 
+## 1.0.3
+
+- Return 0 from ilios_malloc_size when no size API is available
+- Add proper unblock function for nogvl_sem_wait
+- Register thread-pool slots with GC only once
+- Guard future callback dispatch against double invocation
+- Use write barriers when mutating WB_PROTECTED structs
+- Retain Statement object in async execute future
+- Update libuv to v1.52.1 (#22)
+- Remove unnecessary parentheses
+- Remove extconf_compile_commands_json from runtime dependency
+- Revert "Fix build error with -c++11-extensions"
+- Revert "Disable -Werror on macOS"
+- Disable -Werror on macOS
+- Fix build error with -c++11-extensions
+- Add workaround to avoid build error on macOS
+- Use extconf_compile_commands_json gem for clangd LSP
+
 ## 1.0.2
 
 - Fix install error with CMake 4.x

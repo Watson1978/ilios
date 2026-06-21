@@ -180,7 +180,7 @@ static VALUE future_result_yielder_thread(void *arg)
     return Qnil;
 }
 
-VALUE future_create(CassFuture *future, VALUE session, future_kind kind)
+VALUE future_create(CassFuture *future, VALUE session, VALUE statement, future_kind kind)
 {
     CassandraFuture *cassandra_future;
     VALUE cassandra_future_obj;
@@ -189,6 +189,7 @@ VALUE future_create(CassFuture *future, VALUE session, future_kind kind)
     cassandra_future->kind = kind;
     cassandra_future->future = future;
     cassandra_future->session_obj = session;
+    cassandra_future->statement_obj = statement;
     cassandra_future->proc_mutex = rb_mutex_new();
     uv_sem_init(&cassandra_future->sem, 0);
     cassandra_future->already_waited = false;

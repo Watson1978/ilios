@@ -209,7 +209,7 @@ static VALUE future_on_success_synchronize(VALUE future)
         wakeup_thread = true;
     }
 
-    cassandra_future->on_success_block = rb_block_proc();
+    RB_OBJ_WRITE(future, &cassandra_future->on_success_block, rb_block_proc());
 
     if (cass_future_ready(cassandra_future->future)) {
         uv_sem_post(&cassandra_future->sem);
@@ -264,7 +264,7 @@ static VALUE future_on_failure_synchronize(VALUE future)
         wakeup_thread = true;
     }
 
-    cassandra_future->on_failure_block = rb_block_proc();
+    RB_OBJ_WRITE(future, &cassandra_future->on_failure_block, rb_block_proc());
 
     if (cass_future_ready(cassandra_future->future)) {
         uv_sem_post(&cassandra_future->sem);

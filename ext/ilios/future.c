@@ -34,6 +34,13 @@ static void future_thread_pool_init(future_thread_pool *pool)
 {
     pool->queue = rb_funcall(cSizedQueue, id_new, 1, INT2NUM(QUEUE_MAX));
     rb_gc_register_mark_object(pool->queue);
+
+    // Register each slot once. The slots stay zero (Qfalse) until a thread is
+    // assigned; re-registering on every thread (re)creation would leak entries
+    // in the global address list.
+    for (int i = 0; i < THREAD_MAX; i++) {
+        rb_gc_register_address(&pool->thread[i]);
+    }
 }
 
 static void future_thread_pool_prepare_thread(future_thread_pool *pool)
@@ -49,7 +56,6 @@ static void future_thread_pool_prepare_thread(future_thread_pool *pool)
         if (!pool->thread[i] || !RTEST(status)) {
             pool->thread[i] = rb_thread_create(future_result_yielder_thread, (void*)pool);
             rb_funcall(pool->thread[i], id_report_on_exception, 1, Qtrue);
-            rb_gc_register_address(&pool->thread[i]);
         }
     }
 }

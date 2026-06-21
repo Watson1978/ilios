@@ -65,6 +65,7 @@ typedef struct
 
     uv_sem_t sem;
     bool already_waited;
+    bool yielded;
 } CassandraFuture;
 
 extern const rb_data_type_t cassandra_cluster_data_type;

@@ -136,10 +136,18 @@ static VALUE future_result_yielder_synchronize(VALUE future)
 
     GET_FUTURE(future, cassandra_future);
 
-    if (cass_future_error_code(cassandra_future->future) == CASS_OK) {
-        future_result_success_yield(cassandra_future);
-    } else {
-        future_result_failure_yield(cassandra_future);
+    if (!cassandra_future->yielded) {
+        if (cass_future_error_code(cassandra_future->future) == CASS_OK) {
+            if (cassandra_future->on_success_block) {
+                cassandra_future->yielded = true;
+                future_result_success_yield(cassandra_future);
+            }
+        } else {
+            if (cassandra_future->on_failure_block) {
+                cassandra_future->yielded = true;
+                future_result_failure_yield(cassandra_future);
+            }
+        }
     }
     cassandra_future->already_waited = true;
     return Qnil;
@@ -193,6 +201,7 @@ VALUE future_create(CassFuture *future, VALUE session, VALUE statement, future_k
     cassandra_future->proc_mutex = rb_mutex_new();
     uv_sem_init(&cassandra_future->sem, 0);
     cassandra_future->already_waited = false;
+    cassandra_future->yielded = false;
 
     return cassandra_future_obj;
 }
@@ -213,7 +222,9 @@ static VALUE future_on_success_synchronize(VALUE future)
 
     if (cass_future_ready(cassandra_future->future)) {
         uv_sem_post(&cassandra_future->sem);
-        if (cass_future_error_code(cassandra_future->future) == CASS_OK) {
+        if (!cassandra_future->yielded &&
+            cass_future_error_code(cassandra_future->future) == CASS_OK) {
+            cassandra_future->yielded = true;
             future_result_success_yield(cassandra_future);
         }
         return future;
@@ -268,7 +279,9 @@ static VALUE future_on_failure_synchronize(VALUE future)
 
     if (cass_future_ready(cassandra_future->future)) {
         uv_sem_post(&cassandra_future->sem);
-        if (cass_future_error_code(cassandra_future->future) != CASS_OK) {
+        if (!cassandra_future->yielded &&
+            cass_future_error_code(cassandra_future->future) != CASS_OK) {
+            cassandra_future->yielded = true;
             future_result_failure_yield(cassandra_future);
         }
         return future;

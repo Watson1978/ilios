@@ -6,6 +6,7 @@ gemfile do
   gem 'benchmark-ips'
   gem 'sorted_set'
   gem 'bigdecimal'
+  gem 'logger'
   gem 'cassandra-driver', require: 'cassandra'
   gem 'ilios'
 end

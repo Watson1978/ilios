@@ -33,6 +33,8 @@ static ssize_t ilios_malloc_size(void *ptr)
     return malloc_usable_size(ptr);
 #elif defined(HAVE_MALLOC_SIZE)
     return malloc_size(ptr);
+#else
+    return 0;
 #endif
 }
 

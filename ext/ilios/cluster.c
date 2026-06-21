@@ -132,7 +132,7 @@ static VALUE cluster_keyspace(VALUE self, VALUE keyspace)
     StringValue(keyspace);
 
     GET_CLUSTER(self, cassandra_cluster);
-    cassandra_cluster->keyspace = keyspace;
+    RB_OBJ_WRITE(self, &cassandra_cluster->keyspace, keyspace);
 
     return self;
 }

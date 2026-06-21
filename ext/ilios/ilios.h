@@ -65,6 +65,7 @@ typedef struct
 
     uv_sem_t sem;
     bool already_waited;
+    bool yielded;
 } CassandraFuture;
 
 extern const rb_data_type_t cassandra_cluster_data_type;
@@ -100,7 +101,7 @@ extern void Init_statement(void);
 extern void Init_result(void);
 extern void Init_future(void);
 
-extern VALUE future_create(CassFuture *future, VALUE session, future_kind kind);
+extern VALUE future_create(CassFuture *future, VALUE session, VALUE statement, future_kind kind);
 extern void nogvl_future_wait(CassFuture *future);
 extern CassFuture *nogvl_session_prepare(CassSession* session, VALUE query);
 extern CassFuture *nogvl_session_execute(CassSession* session, CassStatement* statement);

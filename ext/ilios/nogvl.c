@@ -59,8 +59,17 @@ static void *nogvl_sem_wait_cb(void *ptr)
     return NULL;
 }
 
+static void nogvl_sem_wait_ubf(void *ptr)
+{
+    uv_sem_t *sem = (uv_sem_t *)ptr;
+    // Wake the blocked uv_sem_wait so the call can be interrupted
+    // (e.g. Thread#kill) instead of relying on signal delivery, which
+    // uv_sem_wait restarts on EINTR.
+    uv_sem_post(sem);
+}
+
 void nogvl_sem_wait(uv_sem_t *sem)
 {
     // Releases GVL to run another thread while waiting
-    rb_thread_call_without_gvl(nogvl_sem_wait_cb, sem, RUBY_UBF_PROCESS, 0);
+    rb_thread_call_without_gvl(nogvl_sem_wait_cb, sem, nogvl_sem_wait_ubf, sem);
 }

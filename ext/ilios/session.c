@@ -32,7 +32,7 @@ static VALUE session_prepare_async(VALUE self, VALUE query)
     GET_SESSION(self, cassandra_session);
 
     prepare_future = nogvl_session_prepare(cassandra_session->session, query);
-    return future_create(prepare_future, self, prepare_async);
+    return future_create(prepare_future, self, Qnil, prepare_async);
 }
 
 /**
@@ -91,7 +91,7 @@ static VALUE session_execute_async(VALUE self, VALUE statement)
     GET_STATEMENT(statement, cassandra_statement);
 
     result_future = nogvl_session_execute(cassandra_session->session, cassandra_statement->statement);
-    return future_create(result_future, self, execute_async);
+    return future_create(result_future, self, statement, execute_async);
 }
 
 /**

@@ -34,6 +34,13 @@ static void future_thread_pool_init(future_thread_pool *pool)
 {
     pool->queue = rb_funcall(cSizedQueue, id_new, 1, INT2NUM(QUEUE_MAX));
     rb_gc_register_mark_object(pool->queue);
+
+    // Register each slot once. The slots stay zero (Qfalse) until a thread is
+    // assigned; re-registering on every thread (re)creation would leak entries
+    // in the global address list.
+    for (int i = 0; i < THREAD_MAX; i++) {
+        rb_gc_register_address(&pool->thread[i]);
+    }
 }
 
 static void future_thread_pool_prepare_thread(future_thread_pool *pool)
@@ -49,7 +56,6 @@ static void future_thread_pool_prepare_thread(future_thread_pool *pool)
         if (!pool->thread[i] || !RTEST(status)) {
             pool->thread[i] = rb_thread_create(future_result_yielder_thread, (void*)pool);
             rb_funcall(pool->thread[i], id_report_on_exception, 1, Qtrue);
-            rb_gc_register_address(&pool->thread[i]);
         }
     }
 }
@@ -136,10 +142,18 @@ static VALUE future_result_yielder_synchronize(VALUE future)
 
     GET_FUTURE(future, cassandra_future);
 
-    if (cass_future_error_code(cassandra_future->future) == CASS_OK) {
-        future_result_success_yield(cassandra_future);
-    } else {
-        future_result_failure_yield(cassandra_future);
+    if (!cassandra_future->yielded) {
+        if (cass_future_error_code(cassandra_future->future) == CASS_OK) {
+            if (cassandra_future->on_success_block) {
+                cassandra_future->yielded = true;
+                future_result_success_yield(cassandra_future);
+            }
+        } else {
+            if (cassandra_future->on_failure_block) {
+                cassandra_future->yielded = true;
+                future_result_failure_yield(cassandra_future);
+            }
+        }
     }
     cassandra_future->already_waited = true;
     return Qnil;
@@ -180,7 +194,7 @@ static VALUE future_result_yielder_thread(void *arg)
     return Qnil;
 }
 
-VALUE future_create(CassFuture *future, VALUE session, future_kind kind)
+VALUE future_create(CassFuture *future, VALUE session, VALUE statement, future_kind kind)
 {
     CassandraFuture *cassandra_future;
     VALUE cassandra_future_obj;
@@ -189,9 +203,11 @@ VALUE future_create(CassFuture *future, VALUE session, future_kind kind)
     cassandra_future->kind = kind;
     cassandra_future->future = future;
     cassandra_future->session_obj = session;
+    cassandra_future->statement_obj = statement;
     cassandra_future->proc_mutex = rb_mutex_new();
     uv_sem_init(&cassandra_future->sem, 0);
     cassandra_future->already_waited = false;
+    cassandra_future->yielded = false;
 
     return cassandra_future_obj;
 }
@@ -208,11 +224,13 @@ static VALUE future_on_success_synchronize(VALUE future)
         wakeup_thread = true;
     }
 
-    cassandra_future->on_success_block = rb_block_proc();
+    RB_OBJ_WRITE(future, &cassandra_future->on_success_block, rb_block_proc());
 
     if (cass_future_ready(cassandra_future->future)) {
         uv_sem_post(&cassandra_future->sem);
-        if (cass_future_error_code(cassandra_future->future) == CASS_OK) {
+        if (!cassandra_future->yielded &&
+            cass_future_error_code(cassandra_future->future) == CASS_OK) {
+            cassandra_future->yielded = true;
             future_result_success_yield(cassandra_future);
         }
         return future;
@@ -263,11 +281,13 @@ static VALUE future_on_failure_synchronize(VALUE future)
         wakeup_thread = true;
     }
 
-    cassandra_future->on_failure_block = rb_block_proc();
+    RB_OBJ_WRITE(future, &cassandra_future->on_failure_block, rb_block_proc());
 
     if (cass_future_ready(cassandra_future->future)) {
         uv_sem_post(&cassandra_future->sem);
-        if (cass_future_error_code(cassandra_future->future) != CASS_OK) {
+        if (!cassandra_future->yielded &&
+            cass_future_error_code(cassandra_future->future) != CASS_OK) {
+            cassandra_future->yielded = true;
             future_result_failure_yield(cassandra_future);
         }
         return future;

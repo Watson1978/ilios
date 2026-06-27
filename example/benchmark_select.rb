@@ -61,6 +61,18 @@ CQL
   Ilios::Cassandra.session.execute(statement)
 end
 
+# Number of async queries issued per benchmark iteration.
+#
+# The async benchmarks issue this many queries concurrently and then wait for
+# *all* of them to resolve, so a single iteration corresponds to N completed
+# queries (not a fire-and-forget issue). Both drivers are driven the same way
+# (issue N, then wait), which makes the results comparable regardless of how
+# each driver handles backpressure.
+#
+# NOTE: benchmark-ips therefore reports *batches* per second. Multiply the
+# reported i/s by ASYNC_BATCH_SIZE to get completed queries per second.
+ASYNC_BATCH_SIZE = Integer(ENV.fetch('ASYNC_BATCH_SIZE', '100'))
+
 class BenchmarkCassandra
   def initialize
     @cluster = Cassandra.cluster
@@ -75,10 +87,9 @@ class BenchmarkCassandra
   end
 
   def run_execute_async(x)
-    x.report('cassandra-driver:execute_async') do
-      future = @session.execute_async(statement)
-      future.on_success do |rows|
-      end
+    x.report("cassandra-driver:execute_async (batch=#{ASYNC_BATCH_SIZE})") do
+      futures = Array.new(ASYNC_BATCH_SIZE) { @session.execute_async(statement) }
+      futures.each(&:join)
     end
   end
 
@@ -97,12 +108,9 @@ class BenchmarkIlios
   end
 
   def run_execute_async(x)
-    x.report('ilios:execute_async') do
-      future = Ilios::Cassandra.session.execute_async(statement)
-      future.on_success do |results|
-        results.each do |row|
-        end
-      end
+    x.report("ilios:execute_async (batch=#{ASYNC_BATCH_SIZE})") do
+      futures = Array.new(ASYNC_BATCH_SIZE) { Ilios::Cassandra.session.execute_async(statement) }
+      futures.each(&:await)
     end
   end
 
@@ -133,24 +141,22 @@ end
 
 =begin
 ## Environment
-- OS: Manjaro Linux x86_64
-- Kernel: 6.7.7-1-MANJARO
-- CPU: AMD Ryzen 9 7940HS
-- Compiler: gcc 13.2.1
-- Ruby: ruby 3.3.0
+- OS: CachyOS x86_64
+- Kernel: Linux 7.1.1-2-cachyos
+- CPU: Intel(R) Core(TM) Ultra 9 275HX
+- Compiler: 16.1.1
+- Ruby: ruby 4.0.5
 
 ## Results
 ### cassandra-driver
 $ RUN=cassandra ruby benchmark_select.rb
 Calculating -------------------------------------
-cassandra-driver:execute
-                        140.897 (± 9.2%) i/s -      2.794k in  19.995255s
-cassandra-driver:execute_async
-                         95.534k (±17.8%) i/s -      1.003M in  20.788894s
+                  cassandra-driver:execute    172.313 (± 7.5%) i/s    (5.80 ms/i) -      3.445k in  19.992696s
+cassandra-driver:execute_async (batch=100)      4.913 (± 0.0%) i/s  (203.54 ms/i) -     99.000 in  20.150937s
 
 ### ilios
-RUN=ilios ruby benchmark_select.rb
+$ RUN=ilios ruby benchmark_select.rb
 Calculating -------------------------------------
-       ilios:execute    327.603 (±15.6%) i/s -      6.400k in  19.991734s
- ilios:execute_async    421.849k (±80.8%) i/s -     19.441k in  19.987868s
+                  ilios:execute    310.300 (±11.0%) i/s    (3.22 ms/i) -      6.203k in  19.990320s
+ilios:execute_async (batch=100)     18.593 (± 5.4%) i/s   (53.78 ms/i) -    372.000 in  20.007994s
 =end

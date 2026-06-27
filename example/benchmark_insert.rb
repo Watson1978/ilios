@@ -41,6 +41,18 @@ statement = Ilios::Cassandra.session.prepare(<<~CQL)
 CQL
 Ilios::Cassandra.session.execute(statement)
 
+# Number of async queries issued per benchmark iteration.
+#
+# The async benchmarks issue this many queries concurrently and then wait for
+# *all* of them to resolve, so a single iteration corresponds to N completed
+# queries (not a fire-and-forget issue). Both drivers are driven the same way
+# (issue N, then wait), which makes the results comparable regardless of how
+# each driver handles backpressure.
+#
+# NOTE: benchmark-ips therefore reports *batches* per second. Multiply the
+# reported i/s by ASYNC_BATCH_SIZE to get completed queries per second.
+ASYNC_BATCH_SIZE = Integer(ENV.fetch('ASYNC_BATCH_SIZE', '100'))
+
 class BenchmarkCassandra
   def initialize
     @cluster = Cassandra.cluster
@@ -64,19 +76,20 @@ class BenchmarkCassandra
   end
 
   def run_execute_async(x)
-    x.report('cassandra-driver:execute_async') do
-      future = @session.execute_async(
-        statement,
-        {
-          arguments: {
-            id: Random.rand(2**40),
-            message: 'hello',
-            created_at: Time.now
+    x.report("cassandra-driver:execute_async (batch=#{ASYNC_BATCH_SIZE})") do
+      futures = Array.new(ASYNC_BATCH_SIZE) do
+        @session.execute_async(
+          statement,
+          {
+            arguments: {
+              id: Random.rand(2**40),
+              message: 'hello',
+              created_at: Time.now
+            }
           }
-        }
-      )
-      future.on_success do |rows|
+        )
       end
+      futures.each(&:join)
     end
   end
 
@@ -106,22 +119,31 @@ class BenchmarkIlios
   end
 
   def run_execute_async(x)
-    x.report('ilios:execute_async') do
-      statement.bind(
-        {
-          id: Random.rand(2**40),
-          message: 'hello',
-          created_at: Time.now
-        }
-      )
-      future = Ilios::Cassandra.session.execute_async(statement)
-      future.on_success do |results|
+    # ilios binds values into a single mutable statement per Cassandra::Statement
+    # object, so each concurrently in-flight query needs its own statement;
+    # otherwise rebinding would race on values the driver is still reading.
+    statements = Array.new(ASYNC_BATCH_SIZE) { build_statement }
+    x.report("ilios:execute_async (batch=#{ASYNC_BATCH_SIZE})") do
+      futures = statements.map do |st|
+        st.bind(
+          {
+            id: Random.rand(2**40),
+            message: 'hello',
+            created_at: Time.now
+          }
+        )
+        Ilios::Cassandra.session.execute_async(st)
       end
+      futures.each(&:await)
     end
   end
 
   def statement
-    @statement ||= Ilios::Cassandra.session.prepare(<<-CQL)
+    @statement ||= build_statement
+  end
+
+  def build_statement
+    Ilios::Cassandra.session.prepare(<<-CQL)
       INSERT INTO ilios.benchmark_insert (
         id,
         message,
@@ -151,24 +173,22 @@ end
 
 =begin
 ## Environment
-- OS: Manjaro Linux x86_64
-- Kernel: 6.7.7-1-MANJARO
-- CPU: AMD Ryzen 9 7940HS
-- Compiler: gcc 13.2.1
-- Ruby: ruby 3.3.0
+- OS: CachyOS x86_64
+- Kernel: Linux 7.1.1-2-cachyos
+- CPU: Intel(R) Core(TM) Ultra 9 275HX
+- Compiler: 16.1.1
+- Ruby: ruby 4.0.5
 
 ## Results
 ### cassandra-driver
 $ RUN=cassandra ruby benchmark_insert.rb
 Calculating -------------------------------------
-cassandra-driver:execute
-                          4.022k (±19.1%) i/s -     76.144k in  19.956985s
-cassandra-driver:execute_async
-                         45.162k (±20.6%) i/s -    514.720k in  19.872873s
+                  cassandra-driver:execute      1.814k (±78.7%) i/s  (551.42 μs/i) -     36.211k in  19.967317s
+cassandra-driver:execute_async (batch=100)    146.388 (±19.8%) i/s    (6.83 ms/i) -      2.928k in  20.001580s
 
 ### ilios
 $ RUN=ilios ruby benchmark_insert.rb
 Calculating -------------------------------------
-       ilios:execute      4.857k (±24.0%) i/s -     91.235k in  19.960159s
- ilios:execute_async    351.393k (±55.5%) i/s -      2.029M in  19.462660s
+                  ilios:execute      2.339k (±80.7%) i/s  (427.61 μs/i) -     46.714k in  19.975484s
+ilios:execute_async (batch=100)    762.482 (±57.6%) i/s    (1.31 ms/i) -     15.241k in  19.988665s
 =end

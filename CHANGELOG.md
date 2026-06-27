@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.0.4
+
+-  Fix macOS build failure with Apple Clang on macOS 26+ (#23)
+
 ## 1.0.3
 
 - Return 0 from ilios_malloc_size when no size API is available

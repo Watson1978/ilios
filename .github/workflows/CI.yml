@@ -26,7 +26,7 @@ jobs:
 
     name: RuboCop
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -40,7 +40,7 @@ jobs:
 
     name: RBS
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -66,7 +66,7 @@ jobs:
     - name: Start Cassandra v${{ matrix.cassandra-version }}
       run: |
         docker run --name cassandra -d -p 9042:9042 cassandra:${{ matrix.cassandra-version }}
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -91,7 +91,7 @@ jobs:
 
     name: macOS, Ruby ${{ matrix.ruby }}
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:

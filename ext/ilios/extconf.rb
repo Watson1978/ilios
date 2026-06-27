@@ -76,8 +76,14 @@ module CassandraDriverInstaller
     def cmake_compile_flags
       flags = super
       flags << "-DCMAKE_POLICY_VERSION_MINIMUM='3.5'"
-      # Avoid "Unsupported compiler: AppleClang" on macOS
-      flags << '-DCMAKE_CXX_COMPILER_ID=Clang' if RUBY_PLATFORM.include?('darwin') && RbConfig::CONFIG['CC'].include?('clang')
+      if RUBY_PLATFORM.include?('darwin') && RbConfig::CONFIG['CC'].include?('clang')
+        # Avoid "Unsupported compiler: AppleClang" on macOS
+        flags << '-DCMAKE_CXX_COMPILER_ID=Clang'
+        # Apple Clang on macOS 26+ warns on memset() of non-trivially-copyable types,
+        # and cpp-driver's CMake adds -Werror once it detects Clang, so the build fails.
+        # cpp-driver 2.17.1 is the final release with no fix, so demote the error back to a warning.
+        flags << '-DCMAKE_CXX_FLAGS=-Wno-error=nontrivial-memcall'
+      end
 
       flags
     end

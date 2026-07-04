@@ -17,14 +17,24 @@ const rb_data_type_t cassandra_statement_data_type = {
     RUBY_TYPED_FREE_IMMEDIATELY | RUBY_TYPED_WB_PROTECTED | RUBY_TYPED_FROZEN_SHAREABLE,
 };
 
+typedef struct
+{
+    const CassPrepared *prepared;
+    CassStatement *statement;
+    VALUE bound_values;
+} statement_bind_context;
+
 void statement_default_config(CassandraStatement *cassandra_statement)
 {
+    cassandra_statement->bound_values = Qnil;
+    cassandra_statement->page_size = DEFAULT_PAGE_SIZE;
+    cassandra_statement->idempotent = idempotency_unset;
     cass_statement_set_paging_size(cassandra_statement->statement, DEFAULT_PAGE_SIZE);
 }
 
-static int hash_cb(VALUE key, VALUE value, VALUE statement)
+static int hash_cb(VALUE key, VALUE value, VALUE arg)
 {
-    CassandraStatement *cassandra_statement = (CassandraStatement *)statement;
+    statement_bind_context *ctx = (statement_bind_context *)arg;
     const CassDataType* data_type;
     CassValueType value_type;
     CassError result;
@@ -35,14 +45,14 @@ static int hash_cb(VALUE key, VALUE value, VALUE statement)
     }
     name = StringValueCStr(key);
 
-    data_type = cass_prepared_parameter_data_type_by_name(cassandra_statement->prepared, name);
+    data_type = cass_prepared_parameter_data_type_by_name(ctx->prepared, name);
     if (data_type == NULL) {
         rb_raise(eStatementError, "Invalid name %s was given.", name);
     }
     value_type = cass_data_type_type(data_type);
 
     if (NIL_P(value)) {
-        result = cass_statement_bind_null_by_name(cassandra_statement->statement, name);
+        result = cass_statement_bind_null_by_name(ctx->statement, name);
         goto result_check;
     }
 
@@ -54,7 +64,7 @@ static int hash_cb(VALUE key, VALUE value, VALUE statement)
             if (v < INT8_MIN || v > INT8_MAX) {
                 rb_raise(rb_eRangeError, "Invalid value: %ld", v);
             }
-            result = cass_statement_bind_int8_by_name(cassandra_statement->statement, name, (cass_int8_t)v);
+            result = cass_statement_bind_int8_by_name(ctx->statement, name, (cass_int8_t)v);
         }
         break;
 
@@ -66,7 +76,7 @@ static int hash_cb(VALUE key, VALUE value, VALUE statement)
                 rb_raise(rb_eRangeError, "Invalid value: %ld", v);
             }
 
-            result = cass_statement_bind_int16_by_name(cassandra_statement->statement, name, (cass_int16_t)v);
+            result = cass_statement_bind_int16_by_name(ctx->statement, name, (cass_int16_t)v);
         }
         break;
 
@@ -78,12 +88,12 @@ static int hash_cb(VALUE key, VALUE value, VALUE statement)
                 rb_raise(rb_eRangeError, "Invalid value: %ld", v);
             }
 
-            result = cass_statement_bind_int32_by_name(cassandra_statement->statement, name, (cass_int32_t)v);
+            result = cass_statement_bind_int32_by_name(ctx->statement, name, (cass_int32_t)v);
         }
         break;
 
     case CASS_VALUE_TYPE_BIGINT:
-        result = cass_statement_bind_int64_by_name(cassandra_statement->statement, name, NUM2LONG(value));
+        result = cass_statement_bind_int64_by_name(ctx->statement, name, NUM2LONG(value));
         break;
 
     case CASS_VALUE_TYPE_FLOAT:
@@ -94,25 +104,25 @@ static int hash_cb(VALUE key, VALUE value, VALUE statement)
                 rb_raise(rb_eRangeError, "Invalid value: %lf", v);
             }
 
-            result = cass_statement_bind_float_by_name(cassandra_statement->statement, name, v);
+            result = cass_statement_bind_float_by_name(ctx->statement, name, v);
         }
         break;
 
     case CASS_VALUE_TYPE_DOUBLE:
-        result = cass_statement_bind_double_by_name(cassandra_statement->statement, name, NUM2DBL(value));
+        result = cass_statement_bind_double_by_name(ctx->statement, name, NUM2DBL(value));
         break;
 
     case CASS_VALUE_TYPE_BOOLEAN:
         {
             cass_bool_t v = RTEST(value) ? cass_true : cass_false;
-            result = cass_statement_bind_bool_by_name(cassandra_statement->statement, name, v);
+            result = cass_statement_bind_bool_by_name(ctx->statement, name, v);
         }
         break;
 
     case CASS_VALUE_TYPE_TEXT:
     case CASS_VALUE_TYPE_ASCII:
     case CASS_VALUE_TYPE_VARCHAR:
-        result = cass_statement_bind_string_by_name(cassandra_statement->statement, name, StringValueCStr(value));
+        result = cass_statement_bind_string_by_name(ctx->statement, name, StringValueCStr(value));
         break;
 
     case CASS_VALUE_TYPE_TIMESTAMP:
@@ -123,7 +133,7 @@ static int hash_cb(VALUE key, VALUE value, VALUE statement)
                 rb_raise(rb_eTypeError, "no implicit conversion of %"PRIsVALUE" to Time", rb_obj_class(value));
             }
         }
-        result = cass_statement_bind_int64_by_name(cassandra_statement->statement, name, (cass_int64_t)(NUM2DBL(rb_Float(value)) * 1000));
+        result = cass_statement_bind_int64_by_name(ctx->statement, name, (cass_int64_t)(NUM2DBL(rb_Float(value)) * 1000));
         break;
 
     case CASS_VALUE_TYPE_UUID:
@@ -132,7 +142,7 @@ static int hash_cb(VALUE key, VALUE value, VALUE statement)
             const char *uuid_string = StringValueCStr(value);
 
             cass_uuid_from_string(uuid_string, &uuid);
-            result = cass_statement_bind_uuid_by_name(cassandra_statement->statement, name, uuid);
+            result = cass_statement_bind_uuid_by_name(ctx->statement, name, uuid);
         }
         break;
 
@@ -145,7 +155,63 @@ result_check:
         rb_raise(eStatementError, "Failed to bind value: %s", cass_error_desc(result));
     }
 
+    if (!NIL_P(ctx->bound_values)) {
+        if (RB_TYPE_P(value, T_STRING)) {
+            // Snapshot the value so a later in-place mutation by the caller
+            // doesn't change what gets bound at execution time.
+            value = rb_str_new_frozen(value);
+        }
+        rb_hash_aset(ctx->bound_values, key, value);
+    }
+
     return ST_CONTINUE;
+}
+
+typedef struct
+{
+    statement_bind_context ctx;
+    VALUE hash;
+} statement_rebind_args;
+
+static VALUE statement_rebind_body(VALUE arg)
+{
+    statement_rebind_args *args = (statement_rebind_args *)arg;
+
+    rb_hash_foreach(args->hash, hash_cb, (VALUE)&args->ctx);
+    return Qnil;
+}
+
+/*
+ * Builds a fresh CassStatement carrying the current configuration and bound
+ * values for a single execution. The returned statement must not be mutated
+ * once handed to the driver, and the caller owns it: it must stay alive until
+ * the execution's future resolves and be freed exactly once afterwards.
+ */
+CassStatement *statement_build_for_execution(CassandraStatement *cassandra_statement)
+{
+    CassStatement *statement = cass_prepared_bind(cassandra_statement->prepared);
+
+    cass_statement_set_paging_size(statement, cassandra_statement->page_size);
+    if (cassandra_statement->idempotent != idempotency_unset) {
+        cass_statement_set_is_idempotent(statement, cassandra_statement->idempotent == idempotency_true ? cass_true : cass_false);
+    }
+
+    if (!NIL_P(cassandra_statement->bound_values)) {
+        statement_rebind_args args;
+        int state = 0;
+
+        args.ctx.prepared = cassandra_statement->prepared;
+        args.ctx.statement = statement;
+        args.ctx.bound_values = Qnil;
+        args.hash = cassandra_statement->bound_values;
+
+        rb_protect(statement_rebind_body, (VALUE)&args, &state);
+        if (state) {
+            cass_statement_free(statement);
+            rb_jump_tag(state);
+        }
+    }
+    return statement;
 }
 
 /**
@@ -161,11 +227,27 @@ result_check:
 static VALUE statement_bind(VALUE self, VALUE hash)
 {
     CassandraStatement *cassandra_statement;
+    statement_bind_context ctx;
+    VALUE bound_values;
 
     Check_Type(hash, T_HASH);
     TypedData_Get_Struct(self, CassandraStatement, &cassandra_statement_data_type, cassandra_statement);
 
-    rb_hash_foreach(hash, hash_cb, (VALUE)cassandra_statement);
+    // Merge into a copy instead of mutating in place: the previous hash may be
+    // shared with a frozen (Ractor-shareable) statement or be iterated by an
+    // execution on another thread.
+    if (NIL_P(cassandra_statement->bound_values)) {
+        bound_values = rb_hash_new();
+    } else {
+        bound_values = rb_hash_dup(cassandra_statement->bound_values);
+    }
+    RB_OBJ_WRITE(self, &cassandra_statement->bound_values, bound_values);
+
+    ctx.prepared = cassandra_statement->prepared;
+    ctx.statement = cassandra_statement->statement;
+    ctx.bound_values = bound_values;
+
+    rb_hash_foreach(hash, hash_cb, (VALUE)&ctx);
     return self;
 }
 
@@ -180,7 +262,8 @@ static VALUE statement_page_size(VALUE self, VALUE page_size)
     CassandraStatement *cassandra_statement;
 
     GET_STATEMENT(self, cassandra_statement);
-    cass_statement_set_paging_size(cassandra_statement->statement, NUM2INT(page_size));
+    cassandra_statement->page_size = NUM2INT(page_size);
+    cass_statement_set_paging_size(cassandra_statement->statement, cassandra_statement->page_size);
     return self;
 }
 
@@ -197,7 +280,8 @@ static VALUE statement_idempotent(VALUE self, VALUE idempotent)
     CassandraStatement *cassandra_statement;
 
     GET_STATEMENT(self, cassandra_statement);
-    cass_statement_set_is_idempotent(cassandra_statement->statement, RTEST(idempotent) ? cass_true : cass_false);
+    cassandra_statement->idempotent = RTEST(idempotent) ? idempotency_true : idempotency_false;
+    cass_statement_set_is_idempotent(cassandra_statement->statement, cassandra_statement->idempotent == idempotency_true ? cass_true : cass_false);
     return self;
 }
 
@@ -205,6 +289,7 @@ static void statement_mark(void *ptr)
 {
     CassandraStatement *cassandra_statement = (CassandraStatement *)ptr;
     rb_gc_mark_movable(cassandra_statement->session_obj);
+    rb_gc_mark_movable(cassandra_statement->bound_values);
 }
 
 static void statement_destroy(void *ptr)
@@ -230,6 +315,7 @@ static void statement_compact(void *ptr)
     CassandraStatement *cassandra_statement = (CassandraStatement *)ptr;
 
     cassandra_statement->session_obj = rb_gc_location(cassandra_statement->session_obj);
+    cassandra_statement->bound_values = rb_gc_location(cassandra_statement->bound_values);
 }
 
 void Init_statement(void)

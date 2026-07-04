@@ -116,6 +116,10 @@ static void future_result_success_yield(CassandraFuture *cassandra_future)
                     cassandra_result_obj = CREATE_RESULT(cassandra_result);
                     cassandra_result->result = cass_future_get_result(cassandra_future->future);
                     cassandra_result->statement_obj = cassandra_future->statement_obj;
+                    // Hand over the executed CassStatement so Result#next_page
+                    // can reuse it and it gets freed exactly once.
+                    cassandra_result->executed_statement = cassandra_future->executed_statement;
+                    cassandra_future->executed_statement = NULL;
 
                     obj = cassandra_result_obj;
                 }
@@ -202,6 +206,7 @@ VALUE future_create(CassFuture *future, VALUE session, VALUE statement, future_k
     cassandra_future_obj = CREATE_FUTURE(cassandra_future);
     cassandra_future->kind = kind;
     cassandra_future->future = future;
+    cassandra_future->executed_statement = NULL;
     cassandra_future->session_obj = session;
     cassandra_future->statement_obj = statement;
     cassandra_future->proc_mutex = rb_mutex_new();
@@ -365,6 +370,11 @@ static void future_destroy(void *ptr)
 
     if (cassandra_future->future) {
         cass_future_free(cassandra_future->future);
+    }
+    if (cassandra_future->executed_statement) {
+        // Safe even if the request is still in flight: the driver's request
+        // holds its own reference to the statement internals.
+        cass_statement_free(cassandra_future->executed_statement);
     }
     uv_sem_destroy(&cassandra_future->sem);
     xfree(cassandra_future);

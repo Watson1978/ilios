@@ -36,8 +36,7 @@ class ResultTest < Minitest::Test
           boolean: true,
           text: "hello #{i}",
           timestamp: Time.now,
-          # FIXME: uuid cause a SEGV in cpp driver
-          uuid: nil # SecureRandom.uuid
+          uuid: SecureRandom.uuid
         }
       )
       Ilios::Cassandra.session.execute(@insert_statement)
@@ -60,8 +59,7 @@ class ResultTest < Minitest::Test
       assert(row['boolean'])
       assert_equal("hello #{index}", row['text'])
       assert_kind_of(Time, row['timestamp'])
-      # FIXME:
-      # assert_kind_of(String, row['uuid'])
+      assert_kind_of(String, row['uuid'])
     end
 
     assert_kind_of(Enumerator, results.each)
@@ -82,8 +80,7 @@ class ResultTest < Minitest::Test
           boolean: true,
           text: "hello #{i}",
           timestamp: Time.now,
-          # FIXME: uuid cause a SEGV in cpp driver
-          uuid: nil # SecureRandom.uuid
+          uuid: SecureRandom.uuid
         }
       )
       Ilios::Cassandra.session.execute(@insert_statement)

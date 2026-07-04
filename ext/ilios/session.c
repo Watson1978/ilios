@@ -85,13 +85,24 @@ static VALUE session_execute_async(VALUE self, VALUE statement)
 {
     CassandraSession *cassandra_session;
     CassandraStatement *cassandra_statement;
+    CassandraFuture *cassandra_future;
+    CassStatement *executed_statement;
     CassFuture *result_future;
+    VALUE future;
 
     GET_SESSION(self, cassandra_session);
     GET_STATEMENT(statement, cassandra_statement);
 
-    result_future = nogvl_session_execute(cassandra_session->session, cassandra_statement->statement);
-    return future_create(result_future, self, statement, execute_async);
+    // Execute a dedicated statement so that later re-binds of `statement`
+    // cannot race with the driver's asynchronous encoding (issue #12).
+    executed_statement = statement_build_for_execution(cassandra_statement);
+    result_future = nogvl_session_execute(cassandra_session->session, executed_statement);
+
+    future = future_create(result_future, self, statement, execute_async);
+    GET_FUTURE(future, cassandra_future);
+    // The future owns the executed statement and frees it on destroy.
+    cassandra_future->executed_statement = executed_statement;
+    return future;
 }
 
 /**
@@ -107,15 +118,18 @@ static VALUE session_execute(VALUE self, VALUE statement)
     CassandraSession *cassandra_session;
     CassandraStatement *cassandra_statement;
     CassandraResult *cassandra_result;
+    CassStatement *executed_statement;
     CassFuture *result_future;
     VALUE cassandra_result_obj;
 
     GET_SESSION(self, cassandra_session);
     GET_STATEMENT(statement, cassandra_statement);
 
-    result_future = nogvl_session_execute(cassandra_session->session, cassandra_statement->statement);
+    executed_statement = statement_build_for_execution(cassandra_statement);
+    result_future = nogvl_session_execute(cassandra_session->session, executed_statement);
 
     cassandra_result_obj = CREATE_RESULT(cassandra_result);
+    cassandra_result->executed_statement = executed_statement;
     cassandra_result->future = result_future;
     cassandra_result->statement_obj = statement;
 

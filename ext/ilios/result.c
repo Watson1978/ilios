@@ -55,12 +55,17 @@ static VALUE result_next_page(VALUE self)
     GET_STATEMENT(cassandra_result->statement_obj, cassandra_statement);
     GET_SESSION(cassandra_statement->session_obj, cassandra_session);
 
-    cass_statement_set_paging_state(cassandra_statement->statement, cassandra_result->result);
+    // Reuse this result's own executed statement: it is not shared with other
+    // executions and its previous request has already completed, so setting
+    // the paging state cannot race with the driver's IO thread.
+    cass_statement_set_paging_state(cassandra_result->executed_statement, cassandra_result->result);
 
-    result_future = nogvl_session_execute(cassandra_session->session, cassandra_statement->statement);
+    result_future = nogvl_session_execute(cassandra_session->session, cassandra_result->executed_statement);
 
     cass_result_free(cassandra_result->result);
-    cass_future_free(cassandra_result->future);
+    if (cassandra_result->future) {
+        cass_future_free(cassandra_result->future);
+    }
     cassandra_result->result = NULL;
     cassandra_result->future = result_future;
 
@@ -244,6 +249,9 @@ static void result_destroy(void *ptr)
     }
     if (cassandra_result->future) {
         cass_future_free(cassandra_result->future);
+    }
+    if (cassandra_result->executed_statement) {
+        cass_statement_free(cassandra_result->executed_statement);
     }
     xfree(cassandra_result);
 }

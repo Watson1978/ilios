@@ -5,6 +5,7 @@ require_relative 'helper'
 class FutureTest < Minitest::Test
   def test_await
     count = 0
+    uuids = {}
 
     prepare_future = Ilios::Cassandra.session.prepare_async(<<~CQL)
       INSERT INTO ilios.test (
@@ -25,7 +26,11 @@ class FutureTest < Minitest::Test
     prepare_future.on_success do |statement|
       futures = []
 
+      # Regression test for a use-after-free in the cpp driver (issue#12):
+      # re-binding the same prepared statement while previous asynchronous
+      # executions are still in flight must not crash nor corrupt values.
       50.times do |i|
+        uuids[i] = SecureRandom.uuid
         statement.bind(
           {
             id: i,
@@ -38,8 +43,7 @@ class FutureTest < Minitest::Test
             boolean: true,
             text: 'hello',
             timestamp: Time.now,
-            # FIXME: uuid cause a SEGV in cpp driver
-            uuid: nil # SecureRandom.uuid
+            uuid: uuids[i]
           }
         )
         result_future = Ilios::Cassandra.session.execute_async(statement)
@@ -53,6 +57,17 @@ class FutureTest < Minitest::Test
     prepare_future.await
 
     assert_equal(50, count)
+
+    statement = Ilios::Cassandra.session.prepare(<<~CQL)
+      SELECT id, uuid FROM ilios.test WHERE id IN (#{(0...50).to_a.join(', ')});
+    CQL
+    rows = Ilios::Cassandra.session.execute(statement).to_a
+
+    assert_equal(50, rows.size)
+    rows.each do |row|
+      assert_kind_of(String, row['uuid'])
+      assert_equal(uuids[row['id']], row['uuid'])
+    end
   end
 
   def test_on_success

@@ -27,6 +27,12 @@ typedef enum {
   execute_async
 } future_kind;
 
+typedef enum {
+  idempotency_unset,
+  idempotency_false,
+  idempotency_true
+} statement_idempotency;
+
 typedef struct
 {
     CassCluster* cluster;
@@ -40,21 +46,36 @@ typedef struct
 
 typedef struct
 {
+    // Scratch statement used for validating values in Statement#bind.
+    // It is never handed to the driver: each execution gets its own
+    // CassStatement built from `prepared` and `bound_values`, because the
+    // driver encodes values asynchronously on its IO thread and re-binding
+    // an in-flight statement is a use-after-free (issue #12).
     CassStatement* statement;
     const CassPrepared* prepared;
     VALUE session_obj;
+    VALUE bound_values;
+    int page_size;
+    statement_idempotency idempotent;
 } CassandraStatement;
 
 typedef struct
 {
     const CassResult *result;
     CassFuture *future;
+    // The CassStatement this result was executed with (owned, freed on destroy).
+    // Not to be confused with statement_obj, the Ruby Statement object.
+    CassStatement *executed_statement;
     VALUE statement_obj;
 } CassandraResult;
 
 typedef struct
 {
     CassFuture *future;
+    // The CassStatement this future's execution was submitted with (owned,
+    // freed on destroy unless handed over to the result). Not to be confused
+    // with statement_obj, the Ruby Statement object.
+    CassStatement *executed_statement;
     future_kind kind;
 
     VALUE session_obj;
@@ -108,6 +129,7 @@ extern CassFuture *nogvl_session_execute(CassSession* session, CassStatement* st
 extern void nogvl_sem_wait(uv_sem_t *sem);
 
 extern void statement_default_config(CassandraStatement *cassandra_statement);
+extern CassStatement *statement_build_for_execution(CassandraStatement *cassandra_statement);
 extern void result_await(CassandraResult *cassandra_result);
 
 

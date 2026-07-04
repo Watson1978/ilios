@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.0.5
+
+- Fix use-after-free when re-binding a statement with in-flight async executions (#24)
+
 ## 1.0.4
 
 -  Fix macOS build failure with Apple Clang on macOS 26+ (#23)

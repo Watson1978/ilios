@@ -45,6 +45,7 @@ static VALUE result_next_page(VALUE self)
     CassandraStatement *cassandra_statement;
     CassandraSession *cassandra_session;
     CassFuture *result_future;
+    CassError error_code;
 
     GET_RESULT(self, cassandra_result);
 
@@ -61,15 +62,21 @@ static VALUE result_next_page(VALUE self)
     cass_statement_set_paging_state(cassandra_result->executed_statement, cassandra_result->result);
 
     result_future = nogvl_session_execute(cassandra_session->session, cassandra_result->executed_statement);
+    nogvl_future_wait(result_future);
+
+    error_code = cass_future_error_code(result_future);
+    if (error_code != CASS_OK) {
+        cass_future_free(result_future);
+        rb_raise(eExecutionError, "Unable to wait executing: %s", cass_error_desc(error_code));
+    }
 
     cass_result_free(cassandra_result->result);
     if (cassandra_result->future) {
         cass_future_free(cassandra_result->future);
     }
-    cassandra_result->result = NULL;
+    cassandra_result->result = cass_future_get_result(result_future);
     cassandra_result->future = result_future;
 
-    result_await(cassandra_result);
     return self;
 }
 

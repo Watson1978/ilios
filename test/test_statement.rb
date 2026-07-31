@@ -224,6 +224,12 @@ class StatementTest < Minitest::Test
   def test_bind_uuid
     # invalid value
     assert_raises(TypeError) { @insert_statement.bind(uuid: Object.new) }
+    assert_raises(Ilios::Cassandra::StatementError) { @insert_statement.bind(uuid: 'x') }
+    assert_raises(Ilios::Cassandra::StatementError) { @insert_statement.bind(uuid: '') }
+    assert_raises(Ilios::Cassandra::StatementError) do
+      # 36 characters, but 'z' is not a hex digit
+      @insert_statement.bind(uuid: 'zzzzzzzz-0000-0000-0000-000000000000')
+    end
 
     # valid values
     uuid = SecureRandom.uuid

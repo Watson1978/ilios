@@ -80,6 +80,13 @@ static VALUE result_next_page(VALUE self)
     return self;
 }
 
+static void result_check_value(CassError error_code, VALUE key)
+{
+    if (error_code != CASS_OK) {
+        rb_raise(eExecutionError, "Unable to get value of %"PRIsVALUE" column: %s", key, cass_error_desc(error_code));
+    }
+}
+
 static VALUE result_convert_row(const CassResult *result, const CassRow *row, size_t column_count)
 {
     VALUE key;
@@ -102,56 +109,56 @@ static VALUE result_convert_row(const CassResult *result, const CassRow *row, si
         switch (type) {
         case CASS_VALUE_TYPE_TINY_INT:
             {
-                cass_int8_t output;
-                cass_value_get_int8(value, &output);
+                cass_int8_t output = 0;
+                result_check_value(cass_value_get_int8(value, &output), key);
                 rb_hash_aset(hash, key, INT2NUM(output));
             }
             break;
 
         case CASS_VALUE_TYPE_SMALL_INT:
             {
-                cass_int16_t output;
-                cass_value_get_int16(value, &output);
+                cass_int16_t output = 0;
+                result_check_value(cass_value_get_int16(value, &output), key);
                 rb_hash_aset(hash, key, INT2NUM(output));
             }
             break;
 
         case CASS_VALUE_TYPE_INT:
             {
-                cass_int32_t output;
-                cass_value_get_int32(value, &output);
+                cass_int32_t output = 0;
+                result_check_value(cass_value_get_int32(value, &output), key);
                 rb_hash_aset(hash, key, INT2NUM(output));
             }
             break;
 
         case CASS_VALUE_TYPE_BIGINT:
             {
-                cass_int64_t output;
-                cass_value_get_int64(value, &output);
+                cass_int64_t output = 0;
+                result_check_value(cass_value_get_int64(value, &output), key);
                 rb_hash_aset(hash, key, LL2NUM(output));
             }
             break;
 
         case CASS_VALUE_TYPE_FLOAT:
             {
-                cass_float_t output;
-                cass_value_get_float(value, &output);
+                cass_float_t output = 0;
+                result_check_value(cass_value_get_float(value, &output), key);
                 rb_hash_aset(hash, key, DBL2NUM(output));
             }
             break;
 
         case CASS_VALUE_TYPE_DOUBLE:
             {
-                cass_double_t output;
-                cass_value_get_double(value, &output);
+                cass_double_t output = 0;
+                result_check_value(cass_value_get_double(value, &output), key);
                 rb_hash_aset(hash, key, DBL2NUM(output));
             }
             break;
 
         case CASS_VALUE_TYPE_BOOLEAN:
             {
-                cass_bool_t output;
-                cass_value_get_bool(value, &output);
+                cass_bool_t output = cass_false;
+                result_check_value(cass_value_get_bool(value, &output), key);
                 rb_hash_aset(hash, key, output == cass_true ? Qtrue : Qfalse);
             }
             break;
@@ -160,26 +167,26 @@ static VALUE result_convert_row(const CassResult *result, const CassRow *row, si
         case CASS_VALUE_TYPE_ASCII:
         case CASS_VALUE_TYPE_VARCHAR:
             {
-                const char* s;
-                size_t s_length;
-                cass_value_get_string(value, &s, &s_length);
+                const char* s = NULL;
+                size_t s_length = 0;
+                result_check_value(cass_value_get_string(value, &s, &s_length), key);
                 rb_hash_aset(hash, key, rb_str_new(s, s_length));
             }
             break;
 
         case CASS_VALUE_TYPE_TIMESTAMP:
             {
-                cass_int64_t output;
-                cass_value_get_int64(value, &output);
+                cass_int64_t output = 0;
+                result_check_value(cass_value_get_int64(value, &output), key);
                 rb_hash_aset(hash, key, rb_time_new(output / 1000, output % 1000 * 1000));
             }
             break;
 
         case CASS_VALUE_TYPE_UUID:
             {
-                CassUuid output;
+                CassUuid output = { 0, 0 };
                 char uuid[40];
-                cass_value_get_uuid(value, &output);
+                result_check_value(cass_value_get_uuid(value, &output), key);
                 cass_uuid_string(output, uuid);
                 rb_hash_aset(hash, key, rb_str_new2(uuid));
             }

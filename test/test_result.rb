@@ -144,4 +144,41 @@ class ResultTest < Minitest::Test
     # the page fetched before the failure is still readable
     assert_equal(5, results.to_a.size)
   end
+
+  def test_each_with_short_value
+    # setup
+    statement = Ilios::Cassandra.session.prepare(<<~CQL)
+      CREATE TABLE IF NOT EXISTS ilios.short_value (id bigint, int int, PRIMARY KEY (id));
+    CQL
+    Ilios::Cassandra.session.execute(statement)
+
+    # Cassandra accepts a zero-length value for a fixed-width column, and it is
+    # not null. The driver cannot decode it, so the value must not be returned.
+    statement = Ilios::Cassandra.session.prepare(<<~CQL)
+      INSERT INTO ilios.short_value (id, int) VALUES (?, blobAsInt(textAsBlob('')));
+    CQL
+    statement.bind(id: 1)
+    Ilios::Cassandra.session.execute(statement)
+
+    statement = Ilios::Cassandra.session.prepare(<<~CQL)
+      SELECT * FROM ilios.short_value;
+    CQL
+    results = Ilios::Cassandra.session.execute(statement)
+
+    # the driver logs the decoding failure at ERROR level
+    Ilios::Cassandra.log_level(Ilios::Cassandra::LOG_DISABLED)
+    begin
+      assert_raises(Ilios::Cassandra::ExecutionError) { results.to_a }
+    ensure
+      # rubocop:disable Style/GlobalVars
+      Ilios::Cassandra.log_level($default_test_log_level)
+      # rubocop:enable Style/GlobalVars
+    end
+
+    # teardown
+    statement = Ilios::Cassandra.session.prepare(<<~CQL)
+      DROP TABLE ilios.short_value;
+    CQL
+    Ilios::Cassandra.session.execute(statement)
+  end
 end

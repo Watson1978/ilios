@@ -108,4 +108,40 @@ class ResultTest < Minitest::Test
     assert_equal(0, results.to_a.size)
     assert_nil(results.next_page) # no more pages
   end
+
+  def test_next_page_failure
+    # setup
+    statement = Ilios::Cassandra.session.prepare(<<~CQL)
+      CREATE TABLE IF NOT EXISTS ilios.paging_failure (id bigint, PRIMARY KEY (id));
+    CQL
+    Ilios::Cassandra.session.execute(statement)
+
+    insert_statement = Ilios::Cassandra.session.prepare(<<~CQL)
+      INSERT INTO ilios.paging_failure (id) VALUES (?);
+    CQL
+    10.times do |i|
+      insert_statement.bind(id: i)
+      Ilios::Cassandra.session.execute(insert_statement)
+    end
+
+    statement = Ilios::Cassandra.session.prepare(<<~CQL)
+      SELECT * FROM ilios.paging_failure;
+    CQL
+    statement.page_size = 5
+
+    results = Ilios::Cassandra.session.execute(statement)
+
+    assert_equal(5, results.to_a.size)
+
+    # dropping the table makes the paging query fail
+    statement = Ilios::Cassandra.session.prepare(<<~CQL)
+      DROP TABLE ilios.paging_failure;
+    CQL
+    Ilios::Cassandra.session.execute(statement)
+
+    assert_raises(Ilios::Cassandra::ExecutionError) { results.next_page }
+
+    # the page fetched before the failure is still readable
+    assert_equal(5, results.to_a.size)
+  end
 end

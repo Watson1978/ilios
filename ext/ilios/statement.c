@@ -138,10 +138,14 @@ static int hash_cb(VALUE key, VALUE value, VALUE arg)
 
     case CASS_VALUE_TYPE_UUID:
         {
-            CassUuid uuid;
+            CassUuid uuid = { 0, 0 };
             const char *uuid_string = StringValueCStr(value);
 
-            cass_uuid_from_string(uuid_string, &uuid);
+            result = cass_uuid_from_string(uuid_string, &uuid);
+            if (result != CASS_OK) {
+                rb_raise(eStatementError, "Invalid UUID was given: %s=%"PRIsVALUE"", name, value);
+            }
+
             result = cass_statement_bind_uuid_by_name(ctx->statement, name, uuid);
         }
         break;

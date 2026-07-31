@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.0.6
+
+- Fix uninitialized memory being returned for an undecodable column value (#27)
+- Fix segmentation fault when a Result is used after Result#next_page fails (#26)
+- Fix uninitialized memory being bound for a malformed UUID string (#25)
+
 ## 1.0.5
 
 - Fix use-after-free when re-binding a statement with in-flight async executions (#24)

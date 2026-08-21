@@ -213,6 +213,7 @@ VALUE future_create(CassFuture *future, VALUE session, VALUE statement, future_k
     uv_sem_init(&cassandra_future->sem, 0);
     cassandra_future->already_waited = false;
     cassandra_future->yielded = false;
+    cassandra_future->queued = false;
 
     return cassandra_future_obj;
 }
@@ -232,7 +233,11 @@ static VALUE future_on_success_synchronize(VALUE future)
     RB_OBJ_WRITE(future, &cassandra_future->on_success_block, rb_block_proc());
 
     if (cass_future_ready(cassandra_future->future)) {
-        uv_sem_post(&cassandra_future->sem);
+        // The pool thread posts the semaphore itself once it has yielded;
+        // posting here too would let #await return before that happens.
+        if (!cassandra_future->queued) {
+            uv_sem_post(&cassandra_future->sem);
+        }
         if (!cassandra_future->yielded &&
             cass_future_error_code(cassandra_future->future) == CASS_OK) {
             cassandra_future->yielded = true;
@@ -242,6 +247,7 @@ static VALUE future_on_success_synchronize(VALUE future)
     }
 
     if (wakeup_thread) {
+        cassandra_future->queued = true;
         future_queue_push(future_thread_pool_get(cassandra_future), future);
     }
 
@@ -289,7 +295,9 @@ static VALUE future_on_failure_synchronize(VALUE future)
     RB_OBJ_WRITE(future, &cassandra_future->on_failure_block, rb_block_proc());
 
     if (cass_future_ready(cassandra_future->future)) {
-        uv_sem_post(&cassandra_future->sem);
+        if (!cassandra_future->queued) {
+            uv_sem_post(&cassandra_future->sem);
+        }
         if (!cassandra_future->yielded &&
             cass_future_error_code(cassandra_future->future) != CASS_OK) {
             cassandra_future->yielded = true;
@@ -299,6 +307,7 @@ static VALUE future_on_failure_synchronize(VALUE future)
     }
 
     if (wakeup_thread) {
+        cassandra_future->queued = true;
         future_queue_push(future_thread_pool_get(cassandra_future), future);
     }
 

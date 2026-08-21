@@ -87,6 +87,8 @@ typedef struct
     uv_sem_t sem;
     bool already_waited;
     bool yielded;
+    // Handed to the thread pool, which posts the semaphore once it is done.
+    bool queued;
 } CassandraFuture;
 
 extern const rb_data_type_t cassandra_cluster_data_type;

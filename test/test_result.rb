@@ -181,4 +181,47 @@ class ResultTest < Minitest::Test
     CQL
     Ilios::Cassandra.session.execute(statement)
   end
+
+  def test_each_with_collections
+    statement = Ilios::Cassandra.session.prepare(<<~CQL)
+      INSERT INTO ilios.test (id, list, "set", map, nested_list, nested_map)
+      VALUES (?, [1, 2, 3], {'a', 'b'}, {'k1': 1, 'k2': 2}, [[1, 2], [3]], {'x': {1, 2}});
+    CQL
+    id = Random.rand(2**60)
+    statement.bind(id: id)
+    Ilios::Cassandra.session.execute(statement)
+
+    select_statement = Ilios::Cassandra.session.prepare(<<~CQL)
+      SELECT * FROM ilios.test WHERE id = ?;
+    CQL
+    select_statement.bind(id: id)
+    row = Ilios::Cassandra.session.execute(select_statement).first
+
+    # rubocop:disable Style/StringHashKeys
+    assert_equal([1, 2, 3], row['list'])
+    assert_equal(Set['a', 'b'], row['set'])
+    assert_equal({ 'k1' => 1, 'k2' => 2 }, row['map'])
+    assert_equal([[1, 2], [3]], row['nested_list'])
+    assert_equal({ 'x' => Set[1, 2] }, row['nested_map'])
+    # rubocop:enable Style/StringHashKeys
+  end
+
+  def test_each_with_null_collections
+    statement = Ilios::Cassandra.session.prepare(<<~CQL)
+      INSERT INTO ilios.test (id) VALUES (?);
+    CQL
+    id = Random.rand(2**60)
+    statement.bind(id: id)
+    Ilios::Cassandra.session.execute(statement)
+
+    select_statement = Ilios::Cassandra.session.prepare(<<~CQL)
+      SELECT * FROM ilios.test WHERE id = ?;
+    CQL
+    select_statement.bind(id: id)
+    row = Ilios::Cassandra.session.execute(select_statement).first
+
+    assert_nil(row['list'])
+    assert_nil(row['set'])
+    assert_nil(row['map'])
+  end
 end

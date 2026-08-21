@@ -42,6 +42,11 @@ def prepare_table
 
   session = cluster.connect
   statement = session.prepare(<<~CQL)
+    DROP TABLE IF EXISTS ilios.test;
+  CQL
+  session.execute(statement)
+
+  statement = session.prepare(<<~CQL)
     CREATE TABLE IF NOT EXISTS ilios.test (
       id bigint,
 
@@ -55,6 +60,11 @@ def prepare_table
       text text,
       timestamp timestamp,
       uuid uuid,
+      list list<int>,
+      "set" set<text>,
+      map map<text, bigint>,
+      nested_list list<frozen<list<int>>>,
+      nested_map map<text, frozen<set<int>>>,
       PRIMARY KEY (id)
     ) WITH compaction = { 'class' : 'LeveledCompactionStrategy' }
     AND gc_grace_seconds = 691200;

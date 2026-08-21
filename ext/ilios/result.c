@@ -87,6 +87,68 @@ static void result_check_value(CassError error_code, VALUE key)
     }
 }
 
+static VALUE result_convert_value(const CassValue *value, VALUE key);
+
+struct result_convert_collection_arg {
+    CassIterator *iterator;
+    CassValueType type;
+    VALUE key;
+};
+
+static VALUE result_convert_collection_body(VALUE a)
+{
+    struct result_convert_collection_arg *args = (struct result_convert_collection_arg *)a;
+
+    if (args->type == CASS_VALUE_TYPE_MAP) {
+        VALUE hash = rb_hash_new();
+
+        while (cass_iterator_next(args->iterator)) {
+            VALUE k = result_convert_value(cass_iterator_get_map_key(args->iterator), args->key);
+            VALUE v = result_convert_value(cass_iterator_get_map_value(args->iterator), args->key);
+            rb_hash_aset(hash, k, v);
+        }
+        return hash;
+    } else {
+        VALUE array = rb_ary_new();
+
+        while (cass_iterator_next(args->iterator)) {
+            rb_ary_push(array, result_convert_value(cass_iterator_get_value(args->iterator), args->key));
+        }
+        if (args->type == CASS_VALUE_TYPE_SET) {
+            return rb_funcall(cSet, id_new, 1, array);
+        }
+        return array;
+    }
+}
+
+static VALUE result_convert_collection_ensure(VALUE a)
+{
+    cass_iterator_free((CassIterator *)a);
+    return Qnil;
+}
+
+static VALUE result_convert_collection(const CassValue *value, CassValueType type, VALUE key)
+{
+    struct result_convert_collection_arg args;
+    CassIterator *iterator;
+
+    if (type == CASS_VALUE_TYPE_MAP) {
+        iterator = cass_iterator_from_map(value);
+    } else {
+        iterator = cass_iterator_from_collection(value);
+    }
+    if (iterator == NULL) {
+        // NULL collections are filtered out by cass_value_is_null in
+        // result_convert_value; this is a safety net.
+        return Qnil;
+    }
+
+    args.iterator = iterator;
+    args.type = type;
+    args.key = key;
+    return rb_ensure(result_convert_collection_body, (VALUE)&args, result_convert_collection_ensure, (VALUE)iterator);
+}
+
 static VALUE result_convert_value(const CassValue *value, VALUE key)
 {
     const CassValueType type = cass_value_type(value);
@@ -170,6 +232,11 @@ static VALUE result_convert_value(const CassValue *value, VALUE key)
             cass_uuid_string(output, uuid);
             return rb_str_new2(uuid);
         }
+
+    case CASS_VALUE_TYPE_LIST:
+    case CASS_VALUE_TYPE_SET:
+    case CASS_VALUE_TYPE_MAP:
+        return result_convert_collection(value, type, key);
 
     default:
         rb_warn("Unsupported type: %d", type);

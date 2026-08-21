@@ -12,6 +12,7 @@ VALUE eExecutionError;
 VALUE eStatementError;
 
 VALUE cSizedQueue;
+VALUE cSet;
 
 VALUE id_to_time;
 VALUE id_new;
@@ -88,6 +89,8 @@ void Init_ilios(void)
     eStatementError = rb_define_class_under(mCassandra, "StatementError", rb_eStandardError);
 
     cSizedQueue = rb_const_get(rb_cThread, rb_intern("SizedQueue"));
+    rb_require("set");
+    cSet = rb_const_get(rb_cObject, rb_intern("Set"));
 
     id_to_time = rb_intern("to_time");
     id_new = rb_intern("new");

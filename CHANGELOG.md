@@ -5,6 +5,7 @@
 - Support Cassandra collection types (`list`, `set` and `map`, including nested collections). `list` maps to `Array`, `set` to `Set`, `map` to `Hash` (#28)
 - Accept `Symbol` values for `text`/`ascii`/`varchar` columns and collection elements (#28)
 - Require Ruby 3.4 or later (#28)
+- Fix `Ilios::Cassandra::Future#await` returning before the registered callback ran (PR #29)
 
 ## 1.0.6
 

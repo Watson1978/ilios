@@ -1,5 +1,11 @@
 # Change Log
 
+## Unreleased
+
+- Support Cassandra collection types (`list`, `set` and `map`, including nested collections). `list` maps to `Array`, `set` to `Set`, `map` to `Hash` (#XX)
+- Accept `Symbol` values for `text`/`ascii`/`varchar` columns and collection elements (#XX)
+- Require Ruby 3.4 or later (#XX)
+
 ## 1.0.6
 
 - Fix uninitialized memory being returned for an undecodable column value (#27)

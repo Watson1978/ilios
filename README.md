@@ -118,6 +118,58 @@ while(result.next_page)
 end
 ```
 
+### Collection types
+
+`list`, `set` and `map` columns (including nested collections such as
+`list<frozen<list<int>>>`) are supported.
+
+```ruby
+statement = session.prepare(<<~CQL)
+  CREATE TABLE IF NOT EXISTS ilios.collection_example (
+    id bigint,
+    tags set<text>,
+    scores list<int>,
+    attributes map<text, bigint>,
+    PRIMARY KEY (id)
+  );
+CQL
+session.execute(statement)
+
+statement = session.prepare(<<~CQL)
+  INSERT INTO ilios.collection_example (
+    id,
+    tags,
+    scores,
+    attributes
+  ) VALUES (?, ?, ?, ?)
+CQL
+statement.bind({
+  id: 1,
+  tags: Set['ruby', 'cassandra'],  # or an Array
+  scores: [85, 92],
+  attributes: { 'height' => 180 },
+})
+session.execute(statement)
+
+statement = session.prepare(<<~CQL)
+  SELECT * FROM ilios.collection_example
+CQL
+session.execute(statement).each do |row|
+  row['tags']       # => #<Set: {"cassandra", "ruby"}>
+  row['scores']     # => [85, 92]
+  row['attributes'] # => {"height" => 180}
+end
+```
+
+Notes:
+
+- A `set` column accepts both `Set` and `Array` on bind, and is always returned as a `Set`.
+- Cassandra stores an empty non-frozen collection as `null`, so inserting `[]`, `Set.new` or `{}` returns `nil` on select. This is Cassandra's data model, not an Ilios limitation.
+- `nil` is not allowed as a collection element (Cassandra collections cannot contain `null`).
+- `Symbol` is accepted for `text` columns and collection elements, and is stored (and returned) as a `String`.
+- Because a `Symbol` map key is stored as its `String` equivalent, binding a map that contains both (for example `{ k1: 1, 'k1' => 2 }`) ends up as a single key on the server.
+- Binding a `String` containing a NUL character (`\0`) to a `text` column raises `ArgumentError` (known limitation).
+
 ### Synchronous API
 `Ilios::Cassandra::Session#prepare` and `Ilios::Cassandra::Session#execute` are provided as synchronous API.
 

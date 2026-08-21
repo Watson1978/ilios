@@ -164,6 +164,7 @@ end
 Notes:
 
 - A `set` column accepts both `Set` and `Array` on bind, and is always returned as a `Set`.
+- A `list` column also accepts both `Array` and `Set` on bind, but is always returned as an `Array`. Binding a `Set` to a `list` column keeps the order `Set#to_a` returns.
 - Cassandra stores an empty non-frozen collection as `null`, so inserting `[]`, `Set.new` or `{}` returns `nil` on select. This is Cassandra's data model, not an Ilios limitation.
 - `nil` is not allowed as a collection element (Cassandra collections cannot contain `null`).
 - `Symbol` is accepted for `text` (as well as `ascii` and `varchar`) columns and collection elements, and is stored (and returned) as a `String`.

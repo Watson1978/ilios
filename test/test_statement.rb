@@ -21,8 +21,10 @@ class StatementTest < Minitest::Test
         "set",
         map,
         nested_list,
-        nested_map
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        nested_map,
+        map_uuid_boolean,
+        list_timestamp
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     CQL
   end
 
@@ -379,6 +381,23 @@ class StatementTest < Minitest::Test
     assert_equal([[1, 2], [3]], results.first['nested_list'])
     assert_equal({ 'x' => Set[1, 2], 'y' => Set[3] }, results.first['nested_map'])
     # rubocop:enable Style/StringHashKeys
+  end
+
+  def test_bind_collection_scalar_elements
+    uuid = SecureRandom.uuid
+    time = Time.now.ceil
+
+    @insert_statement.bind(
+      {
+        map_uuid_boolean: { uuid => true },
+        list_timestamp: [time]
+      }
+    )
+
+    results = insert_and_get_results
+
+    assert_equal({ uuid => true }, results.first['map_uuid_boolean'])
+    assert_equal([time], results.first['list_timestamp'])
   end
 
   def test_bind_empty_collection_returns_nil

@@ -65,6 +65,8 @@ def prepare_table
       map map<text, bigint>,
       nested_list list<frozen<list<int>>>,
       nested_map map<text, frozen<set<int>>>,
+      map_uuid_boolean map<uuid, boolean>,
+      list_timestamp list<timestamp>,
       PRIMARY KEY (id)
     ) WITH compaction = { 'class' : 'LeveledCompactionStrategy' }
     AND gc_grace_seconds = 691200;

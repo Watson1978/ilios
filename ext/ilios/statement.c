@@ -141,7 +141,7 @@ static void statement_bind_collection(statement_bind_target *target, const CassD
 static void statement_bind_check(CassError result, VALUE key)
 {
     if (result != CASS_OK) {
-        rb_raise(eStatementError, "Failed to bind value: %s", cass_error_desc(result));
+        rb_raise(eStatementError, "Failed to bind value of %"PRIsVALUE" column: %s", key, cass_error_desc(result));
     }
 }
 
@@ -412,6 +412,10 @@ static VALUE statement_snapshot_value(const CassDataType *data_type, VALUE value
             VALUE snapshot;
             long length;
 
+            if (element_type == NULL) {
+                rb_raise(eStatementError, "Invalid collection type: missing element type");
+            }
+
             if (RB_TYPE_P(value, T_ARRAY)) {
                 array = value;
             } else if (rb_obj_is_kind_of(value, cSet)) {
@@ -437,6 +441,9 @@ static VALUE statement_snapshot_value(const CassDataType *data_type, VALUE value
             Check_Type(value, T_HASH);
             ctx.key_type = cass_data_type_sub_data_type(data_type, 0);
             ctx.value_type = cass_data_type_sub_data_type(data_type, 1);
+            if (ctx.key_type == NULL || ctx.value_type == NULL) {
+                rb_raise(eStatementError, "Invalid collection type: missing map key or value type");
+            }
             ctx.snapshot = rb_hash_new();
             rb_hash_foreach(value, statement_snapshot_map_cb, (VALUE)&ctx);
             return rb_hash_freeze(ctx.snapshot);

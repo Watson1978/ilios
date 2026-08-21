@@ -15,6 +15,7 @@ VALUE cSizedQueue;
 VALUE cSet;
 
 VALUE id_to_time;
+VALUE id_to_a;
 VALUE id_new;
 VALUE id_push;
 VALUE id_pop;
@@ -93,6 +94,7 @@ void Init_ilios(void)
     cSet = rb_const_get(rb_cObject, rb_intern("Set"));
 
     id_to_time = rb_intern("to_time");
+    id_to_a = rb_intern("to_a");
     id_new = rb_intern("new");
     id_push = rb_intern("push");
     id_pop = rb_intern("pop");

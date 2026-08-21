@@ -110,6 +110,7 @@ extern VALUE cSizedQueue;
 extern VALUE cSet;
 
 extern VALUE id_to_time;
+extern VALUE id_to_a;
 extern VALUE id_new;
 extern VALUE id_push;
 extern VALUE id_pop;

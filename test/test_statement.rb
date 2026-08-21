@@ -16,8 +16,13 @@ class StatementTest < Minitest::Test
         boolean,
         text,
         timestamp,
-        uuid
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        uuid,
+        list,
+        "set",
+        map,
+        nested_list,
+        nested_map
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     CQL
   end
 
@@ -278,6 +283,110 @@ class StatementTest < Minitest::Test
 
   def test_idempotent
     assert_respond_to(@insert_statement, :idempotent=)
+  end
+
+  def test_bind_list
+    # invalid values
+    assert_raises(TypeError) { @insert_statement.bind(list: 'x') }
+    assert_raises(TypeError) { @insert_statement.bind(list: { 1 => 2 }) }
+    assert_raises(TypeError) { @insert_statement.bind(list: ['x']) }
+    assert_raises(TypeError) { @insert_statement.bind(list: [nil]) }
+    assert_raises(RangeError) { @insert_statement.bind(list: [2**31]) }
+
+    # valid values
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind(list: [1, 2, 3]))
+
+    results = insert_and_get_results
+
+    assert_equal([1, 2, 3], results.first['list'])
+  end
+
+  def test_bind_set
+    # invalid values
+    assert_raises(TypeError) { @insert_statement.bind(set: 123) }
+    assert_raises(TypeError) { @insert_statement.bind(set: [1]) }
+
+    # a Set subclass whose to_a returns a non-Array must raise, not crash
+    broken_set = Class.new(Set) do
+      def to_a
+        'broken'
+      end
+    end
+
+    assert_raises(TypeError) { @insert_statement.bind(set: broken_set.new(%w[a])) }
+
+    # valid values: Array (duplicates removed by Cassandra)
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind(set: %w[b a a]))
+
+    results = insert_and_get_results
+
+    assert_equal(Set['a', 'b'], results.first['set'])
+
+    # valid values: Set
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind(set: Set['x', 'y']))
+
+    results = insert_and_get_results
+
+    assert_equal(Set['x', 'y'], results.first['set'])
+  end
+
+  def test_bind_map
+    # invalid values
+    assert_raises(TypeError) { @insert_statement.bind(map: [1]) }
+    # rubocop:disable Style/StringHashKeys
+    assert_raises(TypeError) { @insert_statement.bind(map: { 'k' => 'v' }) }
+    assert_raises(TypeError) { @insert_statement.bind(map: { 'k' => nil }) }
+
+    # valid values
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind(map: { 'k1' => 1, 'k2' => 2 }))
+
+    results = insert_and_get_results
+
+    assert_equal({ 'k1' => 1, 'k2' => 2 }, results.first['map'])
+    # rubocop:enable Style/StringHashKeys
+  end
+
+  def test_bind_nested_collections
+    # inner sets accept both Set and Array
+    # rubocop:disable Style/StringHashKeys
+    @insert_statement.bind(
+      {
+        nested_list: [[1, 2], [3]],
+        nested_map: { 'x' => Set[1, 2], 'y' => [3] }
+      }
+    )
+
+    results = insert_and_get_results
+
+    assert_equal([[1, 2], [3]], results.first['nested_list'])
+    assert_equal({ 'x' => Set[1, 2], 'y' => Set[3] }, results.first['nested_map'])
+    # rubocop:enable Style/StringHashKeys
+  end
+
+  def test_bind_empty_collection_returns_nil
+    # Cassandra stores empty non-frozen collections as null
+    @insert_statement.bind(list: [], set: Set.new, map: {})
+
+    results = insert_and_get_results
+
+    assert_nil(results.first['list'])
+    assert_nil(results.first['set'])
+    assert_nil(results.first['map'])
+  end
+
+  def test_bind_collection_snapshot
+    list = [1, 2]
+    # rubocop:disable Style/StringHashKeys
+    map = { 'k' => 1 }
+    @insert_statement.bind(list: list, map: map)
+    list << 3
+    map['k2'] = 2
+
+    results = insert_and_get_results
+
+    assert_equal([1, 2], results.first['list'])
+    assert_equal({ 'k' => 1 }, results.first['map'])
+    # rubocop:enable Style/StringHashKeys
   end
 
   private

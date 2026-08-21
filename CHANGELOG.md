@@ -2,9 +2,9 @@
 
 ## Unreleased
 
-- Support Cassandra collection types (`list`, `set` and `map`, including nested collections). `list` maps to `Array`, `set` to `Set`, `map` to `Hash` (#XX)
-- Accept `Symbol` values for `text`/`ascii`/`varchar` columns and collection elements (#XX)
-- Require Ruby 3.4 or later (#XX)
+- Support Cassandra collection types (`list`, `set` and `map`, including nested collections). `list` maps to `Array`, `set` to `Set`, `map` to `Hash` (#28)
+- Accept `Symbol` values for `text`/`ascii`/`varchar` columns and collection elements (#28)
+- Require Ruby 3.4 or later (#28)
 
 ## 1.0.6
 

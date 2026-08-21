@@ -92,6 +92,7 @@ void Init_ilios(void)
     cSizedQueue = rb_const_get(rb_cThread, rb_intern("SizedQueue"));
     rb_require("set");
     cSet = rb_const_get(rb_cObject, rb_intern("Set"));
+    rb_gc_register_mark_object(cSet);
 
     id_to_time = rb_intern("to_time");
     id_to_a = rb_intern("to_a");

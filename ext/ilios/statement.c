@@ -24,6 +24,99 @@ typedef struct
     VALUE bound_values;
 } statement_bind_context;
 
+typedef enum {
+    bind_target_kind_statement,
+    bind_target_kind_collection
+} statement_bind_target_kind;
+
+// Where a value is bound to: a named parameter of a statement, or an
+// element of a collection being built. Keeps the type switch in
+// statement_bind_value single so that top-level columns and collection
+// elements always support exactly the same scalar types.
+typedef struct
+{
+    statement_bind_target_kind kind;
+    union {
+        struct {
+            CassStatement *statement;
+            const char *name;
+        } statement;
+        CassCollection *collection;
+    } as;
+} statement_bind_target;
+
+static CassError bind_target_int8(statement_bind_target *target, cass_int8_t value)
+{
+    if (target->kind == bind_target_kind_statement) {
+        return cass_statement_bind_int8_by_name(target->as.statement.statement, target->as.statement.name, value);
+    }
+    return cass_collection_append_int8(target->as.collection, value);
+}
+
+static CassError bind_target_int16(statement_bind_target *target, cass_int16_t value)
+{
+    if (target->kind == bind_target_kind_statement) {
+        return cass_statement_bind_int16_by_name(target->as.statement.statement, target->as.statement.name, value);
+    }
+    return cass_collection_append_int16(target->as.collection, value);
+}
+
+static CassError bind_target_int32(statement_bind_target *target, cass_int32_t value)
+{
+    if (target->kind == bind_target_kind_statement) {
+        return cass_statement_bind_int32_by_name(target->as.statement.statement, target->as.statement.name, value);
+    }
+    return cass_collection_append_int32(target->as.collection, value);
+}
+
+static CassError bind_target_int64(statement_bind_target *target, cass_int64_t value)
+{
+    if (target->kind == bind_target_kind_statement) {
+        return cass_statement_bind_int64_by_name(target->as.statement.statement, target->as.statement.name, value);
+    }
+    return cass_collection_append_int64(target->as.collection, value);
+}
+
+static CassError bind_target_float(statement_bind_target *target, cass_float_t value)
+{
+    if (target->kind == bind_target_kind_statement) {
+        return cass_statement_bind_float_by_name(target->as.statement.statement, target->as.statement.name, value);
+    }
+    return cass_collection_append_float(target->as.collection, value);
+}
+
+static CassError bind_target_double(statement_bind_target *target, cass_double_t value)
+{
+    if (target->kind == bind_target_kind_statement) {
+        return cass_statement_bind_double_by_name(target->as.statement.statement, target->as.statement.name, value);
+    }
+    return cass_collection_append_double(target->as.collection, value);
+}
+
+static CassError bind_target_bool(statement_bind_target *target, cass_bool_t value)
+{
+    if (target->kind == bind_target_kind_statement) {
+        return cass_statement_bind_bool_by_name(target->as.statement.statement, target->as.statement.name, value);
+    }
+    return cass_collection_append_bool(target->as.collection, value);
+}
+
+static CassError bind_target_string(statement_bind_target *target, const char *value)
+{
+    if (target->kind == bind_target_kind_statement) {
+        return cass_statement_bind_string_by_name(target->as.statement.statement, target->as.statement.name, value);
+    }
+    return cass_collection_append_string(target->as.collection, value);
+}
+
+static CassError bind_target_uuid(statement_bind_target *target, CassUuid value)
+{
+    if (target->kind == bind_target_kind_statement) {
+        return cass_statement_bind_uuid_by_name(target->as.statement.statement, target->as.statement.name, value);
+    }
+    return cass_collection_append_uuid(target->as.collection, value);
+}
+
 void statement_default_config(CassandraStatement *cassandra_statement)
 {
     cassandra_statement->bound_values = Qnil;
@@ -32,28 +125,27 @@ void statement_default_config(CassandraStatement *cassandra_statement)
     cass_statement_set_paging_size(cassandra_statement->statement, DEFAULT_PAGE_SIZE);
 }
 
-static int hash_cb(VALUE key, VALUE value, VALUE arg)
+static void statement_bind_check(CassError result, VALUE key)
 {
-    statement_bind_context *ctx = (statement_bind_context *)arg;
-    const CassDataType* data_type;
-    CassValueType value_type;
+    if (result != CASS_OK) {
+        rb_raise(eStatementError, "Failed to bind value: %s", cass_error_desc(result));
+    }
+}
+
+static void statement_bind_value(statement_bind_target *target, const CassDataType *data_type,
+                                 VALUE value, VALUE key, const char *role)
+{
+    const CassValueType value_type = cass_data_type_type(data_type);
     CassError result;
-    const char *name;
-
-    if (SYMBOL_P(key)) {
-        key = rb_sym2str(key);
-    }
-    name = StringValueCStr(key);
-
-    data_type = cass_prepared_parameter_data_type_by_name(ctx->prepared, name);
-    if (data_type == NULL) {
-        rb_raise(eStatementError, "Invalid name %s was given.", name);
-    }
-    value_type = cass_data_type_type(data_type);
 
     if (NIL_P(value)) {
-        result = cass_statement_bind_null_by_name(ctx->statement, name);
-        goto result_check;
+        if (target->kind == bind_target_kind_collection) {
+            // The driver has no cass_collection_append_null: Cassandra
+            // collections cannot contain null elements.
+            rb_raise(rb_eTypeError, "nil is not allowed as a collection %s in %"PRIsVALUE"", role, key);
+        }
+        statement_bind_check(cass_statement_bind_null_by_name(target->as.statement.statement, target->as.statement.name), key);
+        return;
     }
 
     switch (value_type) {
@@ -64,7 +156,7 @@ static int hash_cb(VALUE key, VALUE value, VALUE arg)
             if (v < INT8_MIN || v > INT8_MAX) {
                 rb_raise(rb_eRangeError, "Invalid value: %ld", v);
             }
-            result = cass_statement_bind_int8_by_name(ctx->statement, name, (cass_int8_t)v);
+            result = bind_target_int8(target, (cass_int8_t)v);
         }
         break;
 
@@ -76,7 +168,7 @@ static int hash_cb(VALUE key, VALUE value, VALUE arg)
                 rb_raise(rb_eRangeError, "Invalid value: %ld", v);
             }
 
-            result = cass_statement_bind_int16_by_name(ctx->statement, name, (cass_int16_t)v);
+            result = bind_target_int16(target, (cass_int16_t)v);
         }
         break;
 
@@ -88,12 +180,12 @@ static int hash_cb(VALUE key, VALUE value, VALUE arg)
                 rb_raise(rb_eRangeError, "Invalid value: %ld", v);
             }
 
-            result = cass_statement_bind_int32_by_name(ctx->statement, name, (cass_int32_t)v);
+            result = bind_target_int32(target, (cass_int32_t)v);
         }
         break;
 
     case CASS_VALUE_TYPE_BIGINT:
-        result = cass_statement_bind_int64_by_name(ctx->statement, name, NUM2LONG(value));
+        result = bind_target_int64(target, NUM2LONG(value));
         break;
 
     case CASS_VALUE_TYPE_FLOAT:
@@ -104,25 +196,22 @@ static int hash_cb(VALUE key, VALUE value, VALUE arg)
                 rb_raise(rb_eRangeError, "Invalid value: %lf", v);
             }
 
-            result = cass_statement_bind_float_by_name(ctx->statement, name, v);
+            result = bind_target_float(target, v);
         }
         break;
 
     case CASS_VALUE_TYPE_DOUBLE:
-        result = cass_statement_bind_double_by_name(ctx->statement, name, NUM2DBL(value));
+        result = bind_target_double(target, NUM2DBL(value));
         break;
 
     case CASS_VALUE_TYPE_BOOLEAN:
-        {
-            cass_bool_t v = RTEST(value) ? cass_true : cass_false;
-            result = cass_statement_bind_bool_by_name(ctx->statement, name, v);
-        }
+        result = bind_target_bool(target, RTEST(value) ? cass_true : cass_false);
         break;
 
     case CASS_VALUE_TYPE_TEXT:
     case CASS_VALUE_TYPE_ASCII:
     case CASS_VALUE_TYPE_VARCHAR:
-        result = cass_statement_bind_string_by_name(ctx->statement, name, StringValueCStr(value));
+        result = bind_target_string(target, StringValueCStr(value));
         break;
 
     case CASS_VALUE_TYPE_TIMESTAMP:
@@ -133,7 +222,7 @@ static int hash_cb(VALUE key, VALUE value, VALUE arg)
                 rb_raise(rb_eTypeError, "no implicit conversion of %"PRIsVALUE" to Time", rb_obj_class(value));
             }
         }
-        result = cass_statement_bind_int64_by_name(ctx->statement, name, (cass_int64_t)(NUM2DBL(rb_Float(value)) * 1000));
+        result = bind_target_int64(target, (cass_int64_t)(NUM2DBL(rb_Float(value)) * 1000));
         break;
 
     case CASS_VALUE_TYPE_UUID:
@@ -143,21 +232,42 @@ static int hash_cb(VALUE key, VALUE value, VALUE arg)
 
             result = cass_uuid_from_string(uuid_string, &uuid);
             if (result != CASS_OK) {
-                rb_raise(eStatementError, "Invalid UUID was given: %s=%"PRIsVALUE"", name, value);
+                rb_raise(eStatementError, "Invalid UUID was given: %"PRIsVALUE"=%"PRIsVALUE"", key, value);
             }
 
-            result = cass_statement_bind_uuid_by_name(ctx->statement, name, uuid);
+            result = bind_target_uuid(target, uuid);
         }
         break;
 
     default:
-        rb_raise(rb_eTypeError, "Unsupported %"PRIsVALUE" type: %s=%"PRIsVALUE"", rb_obj_class(value), name, value);
+        rb_raise(rb_eTypeError, "Unsupported %"PRIsVALUE" type: %"PRIsVALUE"=%"PRIsVALUE"", rb_obj_class(value), key, value);
     }
 
-result_check:
-    if (result != CASS_OK) {
-        rb_raise(eStatementError, "Failed to bind value: %s", cass_error_desc(result));
+    statement_bind_check(result, key);
+}
+
+static int hash_cb(VALUE key, VALUE value, VALUE arg)
+{
+    statement_bind_context *ctx = (statement_bind_context *)arg;
+    const CassDataType* data_type;
+    const char *name;
+    statement_bind_target target;
+
+    if (SYMBOL_P(key)) {
+        key = rb_sym2str(key);
     }
+    name = StringValueCStr(key);
+
+    data_type = cass_prepared_parameter_data_type_by_name(ctx->prepared, name);
+    if (data_type == NULL) {
+        rb_raise(eStatementError, "Invalid name %s was given.", name);
+    }
+
+    target.kind = bind_target_kind_statement;
+    target.as.statement.statement = ctx->statement;
+    target.as.statement.name = name;
+
+    statement_bind_value(&target, data_type, value, key, NULL);
 
     if (!NIL_P(ctx->bound_values)) {
         if (RB_TYPE_P(value, T_STRING)) {

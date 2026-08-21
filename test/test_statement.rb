@@ -203,6 +203,14 @@ class StatementTest < Minitest::Test
     assert_equal('hello', results.first['text'])
   end
 
+  def test_bind_text_with_symbol
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind(text: :hello))
+
+    results = insert_and_get_results
+
+    assert_equal('hello', results.first['text'])
+  end
+
   def test_bind_timestamp
     # invalid value
     assert_raises(TypeError) { @insert_statement.bind(timestamp: Object.new) }
@@ -342,6 +350,16 @@ class StatementTest < Minitest::Test
 
     results = insert_and_get_results
 
+    assert_equal({ 'k1' => 1, 'k2' => 2 }, results.first['map'])
+    # rubocop:enable Style/StringHashKeys
+  end
+
+  def test_bind_map_with_symbol_keys
+    assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind(map: { k1: 1, k2: 2 }))
+
+    results = insert_and_get_results
+
+    # rubocop:disable Style/StringHashKeys
     assert_equal({ 'k1' => 1, 'k2' => 2 }, results.first['map'])
     # rubocop:enable Style/StringHashKeys
   end

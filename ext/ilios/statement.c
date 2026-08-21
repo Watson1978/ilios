@@ -224,6 +224,11 @@ static void statement_bind_value(statement_bind_target *target, const CassDataTy
     case CASS_VALUE_TYPE_TEXT:
     case CASS_VALUE_TYPE_ASCII:
     case CASS_VALUE_TYPE_VARCHAR:
+        if (SYMBOL_P(value)) {
+            // rb_sym2str returns the Symbol's fstring; no allocation, so
+            // converting on every execution is fine.
+            value = rb_sym2str(value);
+        }
         result = bind_target_string(target, StringValueCStr(value));
         break;
 
@@ -440,6 +445,10 @@ static VALUE statement_snapshot_value(const CassDataType *data_type, VALUE value
     case CASS_VALUE_TYPE_TEXT:
     case CASS_VALUE_TYPE_ASCII:
     case CASS_VALUE_TYPE_VARCHAR:
+        if (SYMBOL_P(value)) {
+            // Symbols are immutable; no defensive copy needed.
+            return value;
+        }
         // Also converts to_str objects here so the converted String (not the
         // possibly mutable object) is what gets stored and re-bound.
         StringValue(value);

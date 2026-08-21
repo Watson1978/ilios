@@ -6,7 +6,7 @@ plugins:
 
 AllCops:
     EnabledByDefault: true
-    TargetRubyVersion: 3.1
+    TargetRubyVersion: 3.4
 
 Bundler/GemComment:
   Enabled: false

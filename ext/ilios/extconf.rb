@@ -35,7 +35,8 @@ module LibuvInstaller
     unless File.exist?(LIBUV_INSTALL_PATH)
       libuv_recipe = LibuvRecipe.new('libuv', Ilios::LIBUV_VERSION, make_command: "make -j #{Etc.nprocessors}")
       libuv_recipe.files << {
-        url: "https://github.com/libuv/libuv/archive/v#{Ilios::LIBUV_VERSION}.tar.gz"
+        url: "https://github.com/libuv/libuv/archive/v#{Ilios::LIBUV_VERSION}.tar.gz",
+        sha256: Ilios::LIBUV_SHA256
       }
       libuv_recipe.cook
       if RUBY_PLATFORM.include?('darwin')
@@ -97,7 +98,8 @@ module CassandraDriverInstaller
     unless File.exist?(CASSANDRA_CPP_DRIVER_INSTALL_PATH)
       cassandra_recipe = CassandraRecipe.new('cpp-driver', Ilios::CASSANDRA_CPP_DRIVER_VERSION, make_command: "make -j #{Etc.nprocessors}")
       cassandra_recipe.files << {
-        url: "https://github.com/datastax/cpp-driver/archive/#{Ilios::CASSANDRA_CPP_DRIVER_VERSION}.tar.gz"
+        url: "https://github.com/datastax/cpp-driver/archive/#{Ilios::CASSANDRA_CPP_DRIVER_VERSION}.tar.gz",
+        sha256: Ilios::CASSANDRA_CPP_DRIVER_SHA256
       }
       cassandra_recipe.cook
       if RUBY_PLATFORM.include?('darwin')

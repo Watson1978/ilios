@@ -29,6 +29,8 @@ end
 if RUBY_PLATFORM.include?('linux')
   require 'ruby_memcheck'
 
+  RubyMemcheck.config(binary_name: 'ilios')
+
   namespace :test do
     RubyMemcheck::TestTask.new(:valgrind, &test_config)
   end

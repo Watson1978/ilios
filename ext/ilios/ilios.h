@@ -11,7 +11,16 @@
 
 #define DEFAULT_PAGE_SIZE 10000
 
-#define GET_CLUSTER(obj, var)   TypedData_Get_Struct(obj, CassandraCluster, &cassandra_cluster_data_type, var)
+// Cluster exposes an allocator, so allocate and dup both produce an instance
+// that never ran initialize. Reject it here instead of handing NULL to the
+// driver, which segfaults.
+#define GET_CLUSTER(obj, var)   do { \
+    GET_UNINITIALIZED_CLUSTER(obj, var); \
+    if ((var)->cluster == NULL) { \
+        rb_raise(rb_eRuntimeError, "uninitialized Ilios::Cassandra::Cluster"); \
+    } \
+} while (0)
+#define GET_UNINITIALIZED_CLUSTER(obj, var) TypedData_Get_Struct(obj, CassandraCluster, &cassandra_cluster_data_type, var)
 #define GET_SESSION(obj, var)   TypedData_Get_Struct(obj, CassandraSession, &cassandra_session_data_type, var)
 #define GET_STATEMENT(obj, var) TypedData_Get_Struct(obj, CassandraStatement, &cassandra_statement_data_type, var)
 #define GET_RESULT(obj, var)    TypedData_Get_Struct(obj, CassandraResult, &cassandra_result_data_type, var)

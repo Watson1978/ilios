@@ -3,6 +3,15 @@
 require_relative 'helper'
 
 class ClusterTest < Minitest::Test
+  def test_uninitialized_cluster
+    assert_raises(RuntimeError) { Ilios::Cassandra::Cluster.allocate.port(9042) }
+    assert_raises(RuntimeError) { Ilios::Cassandra::Cluster.allocate.hosts([CASSANDRA_HOST]) }
+    assert_raises(RuntimeError) { Ilios::Cassandra::Cluster.allocate.keyspace('ilios') }
+    assert_raises(RuntimeError) { Ilios::Cassandra::Cluster.allocate.connect }
+    assert_raises(RuntimeError) { Ilios::Cassandra::Cluster.new.dup.port(9042) }
+    assert_raises(RuntimeError) { Ilios::Cassandra::Cluster.new.clone.port(9042) }
+  end
+
   def test_hosts
     cluster = Ilios::Cassandra::Cluster.new
 

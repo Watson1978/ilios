@@ -62,7 +62,7 @@ static VALUE cluster_initialize(VALUE self)
 {
     CassandraCluster *cassandra_cluster;
 
-    GET_CLUSTER(self, cassandra_cluster);
+    GET_UNINITIALIZED_CLUSTER(self, cassandra_cluster);
     cassandra_cluster->cluster = cass_cluster_new();
 
     return self;

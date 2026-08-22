@@ -450,6 +450,30 @@ class StatementTest < Minitest::Test
     assert_equal(Set['a'], results.first['set'])
   end
 
+  def test_bind_collection_element_growing_the_array
+    grower = Class.new do
+      def initialize(array)
+        @array = array
+      end
+
+      def to_str
+        @array << self.class.new(@array) if @array.size < 100
+        'a'
+      end
+    end
+
+    array = []
+    array << grower.new(array)
+
+    @insert_statement.bind(set: array)
+
+    assert_equal(2, array.size)
+
+    results = insert_and_get_results
+
+    assert_equal(Set['a'], results.first['set'])
+  end
+
   private
 
   def insert_and_get_results

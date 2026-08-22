@@ -172,7 +172,14 @@ static VALUE cluster_keyspace(VALUE self, VALUE keyspace)
 
 /**
  * Sets the protocol version. The driver will automatically downgrade to the lowest supported protocol version.
- * Default is +PROTOCOL_VERSION_V4+.
+ * Default is +PROTOCOL_VERSION_V4+, or +PROTOCOL_VERSION_DSEV1+ against DSE.
+ *
+ * The driver accepts +PROTOCOL_VERSION_V3+, +PROTOCOL_VERSION_V4+,
+ * +PROTOCOL_VERSION_DSEV1+ and +PROTOCOL_VERSION_DSEV2+ only. It ignores
+ * +PROTOCOL_VERSION_V1+ and +PROTOCOL_VERSION_V2+, which are below the lowest
+ * version it supports, and +PROTOCOL_VERSION_V5+, which is a beta version it
+ * enables through a separate setting instead. Each of those leaves the version
+ * unchanged and is reported on the driver's error log.
  *
  * @param version [Integer] A protocol version.
  * @return [Cassandra::Cluster] self.

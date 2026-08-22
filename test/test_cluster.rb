@@ -61,9 +61,12 @@ class ClusterTest < Minitest::Test
   def test_protocol_version
     cluster = Ilios::Cassandra::Cluster.new
 
-    assert_raises(TypeError) { cluster.keyspace(Object.new) }
-    assert_kind_of(Ilios::Cassandra::Cluster, cluster.protocol_version(Ilios::Cassandra::Cluster::PROTOCOL_VERSION_V4))
+    assert_raises(TypeError) { cluster.protocol_version(Object.new) }
     assert_raises(RangeError) { cluster.protocol_version(-1) }
+    assert_kind_of(Ilios::Cassandra::Cluster, cluster.protocol_version(Ilios::Cassandra::Cluster::PROTOCOL_VERSION_V3))
+    assert_kind_of(Ilios::Cassandra::Cluster, cluster.protocol_version(Ilios::Cassandra::Cluster::PROTOCOL_VERSION_V4))
+    assert_kind_of(Ilios::Cassandra::Cluster, cluster.protocol_version(Ilios::Cassandra::Cluster::PROTOCOL_VERSION_DSEV1))
+    assert_kind_of(Ilios::Cassandra::Cluster, cluster.protocol_version(Ilios::Cassandra::Cluster::PROTOCOL_VERSION_DSEV2))
   end
 
   def test_connect_timeout

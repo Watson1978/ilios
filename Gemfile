@@ -15,3 +15,5 @@ gem 'rubocop-minitest', '~> 0.33'
 gem 'rubocop-on-rbs', '~> 2.0'
 gem 'rubocop-performance', '~> 1.19'
 gem 'rubocop-rake', '~> 0.6'
+
+gem 'ruby_memcheck', '~> 3.0' if RUBY_PLATFORM.include?('linux')

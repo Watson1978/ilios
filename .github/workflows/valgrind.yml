@@ -1,0 +1,41 @@
+name: Valgrind
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+env:
+  TESTOPTS: --verbose
+
+jobs:
+  valgrind:
+    name: memcheck (Ruby ${{ matrix.ruby }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        cassandra-version: ['5']
+        ruby: ['4.0']
+    steps:
+      - name: Start Cassandra v${{ matrix.cassandra-version }}
+        run: |
+          docker run --name cassandra -d -p 9042:9042 cassandra:${{ matrix.cassandra-version }}
+      - uses: actions/checkout@v7
+      - name: Install Valgrind
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y valgrind
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+      - name: Prepare tests
+        run: bundle exec rake compile
+      - name: Run the test suite under Valgrind memcheck
+        run: bundle exec rake test:valgrind

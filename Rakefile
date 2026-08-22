@@ -13,9 +13,10 @@ Rake::ExtensionTask.new('ilios') do |ext|
   ext.ext_dir = 'ext/ilios'
 end
 
-Rake::TestTask.new do |task|
-  task.pattern = 'test/test_*.rb'
+test_config = lambda do |t|
+  t.pattern = 'test/test_*.rb'
 end
+Rake::TestTask.new(test: :compile, &test_config)
 
 namespace :rbs do
   desc 'Validate RBS definitions'
@@ -24,5 +25,13 @@ namespace :rbs do
     sh("bundle exec rbs #{all_sigs} validate") do |ok, _|
       abort('one or more rbs validate failed') unless ok
     end
+  end
+end
+
+if RUBY_PLATFORM.include?('linux')
+  require 'ruby_memcheck'
+
+  namespace :test do
+    RubyMemcheck::TestTask.new(valgrind: :compile, &test_config)
   end
 end

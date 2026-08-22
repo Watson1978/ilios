@@ -4,9 +4,6 @@ require 'bundler/gem_tasks'
 require 'rake/extensiontask'
 require 'rake/testtask'
 
-desc 'Run tests'
-task test: :compile
-
 task default: :test
 
 Rake::ExtensionTask.new('ilios') do |ext|
@@ -14,9 +11,10 @@ Rake::ExtensionTask.new('ilios') do |ext|
 end
 
 test_config = lambda do |t|
+  t.deps = [:compile]
   t.pattern = 'test/test_*.rb'
 end
-Rake::TestTask.new(test: :compile, &test_config)
+Rake::TestTask.new(:test, &test_config)
 
 namespace :rbs do
   desc 'Validate RBS definitions'
@@ -32,6 +30,6 @@ if RUBY_PLATFORM.include?('linux')
   require 'ruby_memcheck'
 
   namespace :test do
-    RubyMemcheck::TestTask.new(valgrind: :compile, &test_config)
+    RubyMemcheck::TestTask.new(:valgrind, &test_config)
   end
 end

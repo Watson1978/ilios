@@ -23,6 +23,36 @@ static VALUE cluster_allocator(VALUE klass)
     return CREATE_CLUSTER(cassandra_cluster);
 }
 
+static void cluster_check_error(CassError error, const char *name)
+{
+    if (error != CASS_OK) {
+        rb_raise(rb_eArgError, "Invalid %s: %s", name, cass_error_desc(error));
+    }
+}
+
+// Casting a negative value to unsigned wraps it into a huge number, so check
+// the range on the signed value NUM2LONG/NUM2LL already produced. Converting a
+// second time would run to_int again, which may return a different value.
+static unsigned cluster_value_to_uint(VALUE value, const char *name)
+{
+    long v = NUM2LONG(value);
+
+    if (v < 0 || v > UINT_MAX) {
+        rb_raise(rb_eRangeError, "Invalid %s: %ld", name, v);
+    }
+    return (unsigned)v;
+}
+
+static cass_uint64_t cluster_value_to_uint64(VALUE value, const char *name)
+{
+    long long v = NUM2LL(value);
+
+    if (v < 0) {
+        rb_raise(rb_eRangeError, "Invalid %s: %lld", name, v);
+    }
+    return (cass_uint64_t)v;
+}
+
 /**
  * Creates a new cluster.
  *
@@ -110,13 +140,14 @@ static VALUE cluster_hosts(VALUE self, VALUE hosts)
  *
  * @param port [Integer] A port number.
  * @return [Cassandra::Cluster] self.
+ * @raise [ArgumentError] If the port is zero or negative.
  */
 static VALUE cluster_port(VALUE self, VALUE port)
 {
     CassandraCluster *cassandra_cluster;
 
     GET_CLUSTER(self, cassandra_cluster);
-    cass_cluster_set_port(cassandra_cluster->cluster, NUM2INT(port));
+    cluster_check_error(cass_cluster_set_port(cassandra_cluster->cluster, NUM2INT(port)), "port");
 
     return self;
 }
@@ -145,13 +176,19 @@ static VALUE cluster_keyspace(VALUE self, VALUE keyspace)
  *
  * @param version [Integer] A protocol version.
  * @return [Cassandra::Cluster] self.
+ * @raise [RangeError] If a negative value was given.
  */
 static VALUE cluster_protocol_version(VALUE self, VALUE version)
 {
     CassandraCluster *cassandra_cluster;
+    int v = NUM2INT(version);
+
+    if (v < 0) {
+        rb_raise(rb_eRangeError, "Invalid protocol_version: %d", v);
+    }
 
     GET_CLUSTER(self, cassandra_cluster);
-    cass_cluster_set_protocol_version(cassandra_cluster->cluster, NUM2INT(version));
+    cass_cluster_set_protocol_version(cassandra_cluster->cluster, v);
 
     return self;
 }
@@ -162,13 +199,14 @@ static VALUE cluster_protocol_version(VALUE self, VALUE version)
  *
  * @param timeout_ms [Integer] A connect timeout in milliseconds.
  * @return [Cassandra::Cluster] self.
+ * @raise [RangeError] If a negative value was given.
  */
 static VALUE cluster_connect_timeout(VALUE self, VALUE timeout_ms)
 {
     CassandraCluster *cassandra_cluster;
 
     GET_CLUSTER(self, cassandra_cluster);
-    cass_cluster_set_connect_timeout(cassandra_cluster->cluster, NUM2UINT(timeout_ms));
+    cass_cluster_set_connect_timeout(cassandra_cluster->cluster, cluster_value_to_uint(timeout_ms, "connect_timeout"));
 
     return self;
 }
@@ -179,13 +217,14 @@ static VALUE cluster_connect_timeout(VALUE self, VALUE timeout_ms)
  *
  * @param timeout_ms [Integer] A request timeout in milliseconds.
  * @return [Cassandra::Cluster] self.
+ * @raise [RangeError] If a negative value was given.
  */
 static VALUE cluster_request_timeout(VALUE self, VALUE timeout_ms)
 {
     CassandraCluster *cassandra_cluster;
 
     GET_CLUSTER(self, cassandra_cluster);
-    cass_cluster_set_request_timeout(cassandra_cluster->cluster, NUM2UINT(timeout_ms));
+    cass_cluster_set_request_timeout(cassandra_cluster->cluster, cluster_value_to_uint(timeout_ms, "request_timeout"));
 
     return self;
 }
@@ -196,13 +235,14 @@ static VALUE cluster_request_timeout(VALUE self, VALUE timeout_ms)
  *
  * @param timeout_ms [Integer] A request timeout in milliseconds.
  * @return [Cassandra::Cluster] self.
+ * @raise [RangeError] If a negative value was given.
  */
 static VALUE cluster_resolve_timeout(VALUE self, VALUE timeout_ms)
 {
     CassandraCluster *cassandra_cluster;
 
     GET_CLUSTER(self, cassandra_cluster);
-    cass_cluster_set_resolve_timeout(cassandra_cluster->cluster, NUM2UINT(timeout_ms));
+    cass_cluster_set_resolve_timeout(cassandra_cluster->cluster, cluster_value_to_uint(timeout_ms, "resolve_timeout"));
 
     return self;
 }
@@ -217,13 +257,15 @@ static VALUE cluster_resolve_timeout(VALUE self, VALUE timeout_ms)
 static VALUE cluster_constant_speculative_execution_policy(VALUE self, VALUE constant_delay_ms, VALUE max_speculative_executions)
 {
     CassandraCluster *cassandra_cluster;
+    long delay = NUM2LONG(constant_delay_ms);
+    int max_executions = NUM2INT(max_speculative_executions);
 
-    if (NUM2LONG(constant_delay_ms) < 0 || NUM2INT(max_speculative_executions) < 0) {
+    if (delay < 0 || max_executions < 0) {
         rb_raise(rb_eArgError, "Bad parameters.");
     }
 
     GET_CLUSTER(self, cassandra_cluster);
-    cass_cluster_set_constant_speculative_execution_policy(cassandra_cluster->cluster, NUM2LONG(constant_delay_ms), NUM2INT(max_speculative_executions));
+    cluster_check_error(cass_cluster_set_constant_speculative_execution_policy(cassandra_cluster->cluster, delay, max_executions), "constant_speculative_execution_policy");
 
     return self;
 }
@@ -246,36 +288,6 @@ static VALUE cluster_credentials(VALUE self, VALUE username, VALUE password)
     cass_cluster_set_credentials(cassandra_cluster->cluster, StringValueCStr(username), StringValueCStr(password));
 
     return self;
-}
-
-static void cluster_check_error(CassError error, const char *name)
-{
-    if (error != CASS_OK) {
-        rb_raise(rb_eArgError, "Invalid %s: %s", name, cass_error_desc(error));
-    }
-}
-
-// Casting a negative value to unsigned wraps it into a huge number, so check
-// the range on the signed value NUM2LONG/NUM2LL already produced. Converting a
-// second time would run to_int again, which may return a different value.
-static unsigned cluster_value_to_uint(VALUE value, const char *name)
-{
-    long v = NUM2LONG(value);
-
-    if (v < 0 || v > UINT_MAX) {
-        rb_raise(rb_eRangeError, "Invalid %s: %ld", name, v);
-    }
-    return (unsigned)v;
-}
-
-static cass_uint64_t cluster_value_to_uint64(VALUE value, const char *name)
-{
-    long long v = NUM2LL(value);
-
-    if (v < 0) {
-        rb_raise(rb_eRangeError, "Invalid %s: %lld", name, v);
-    }
-    return (cass_uint64_t)v;
 }
 
 // The driver only rejects CASS_CONSISTENCY_UNKNOWN at set time; any other

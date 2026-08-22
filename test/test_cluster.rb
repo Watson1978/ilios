@@ -37,6 +37,8 @@ class ClusterTest < Minitest::Test
     cluster = Ilios::Cassandra::Cluster.new
 
     assert_raises(TypeError) { cluster.port(Object.new) }
+    assert_raises(ArgumentError) { cluster.port(-1) }
+    assert_raises(ArgumentError) { cluster.port(0) }
     assert_kind_of(Ilios::Cassandra::Cluster, cluster.port(9042))
   end
 
@@ -52,6 +54,7 @@ class ClusterTest < Minitest::Test
 
     assert_raises(TypeError) { cluster.keyspace(Object.new) }
     assert_kind_of(Ilios::Cassandra::Cluster, cluster.protocol_version(Ilios::Cassandra::Cluster::PROTOCOL_VERSION_V4))
+    assert_raises(RangeError) { cluster.protocol_version(-1) }
   end
 
   def test_connect_timeout
@@ -59,6 +62,7 @@ class ClusterTest < Minitest::Test
 
     assert_raises(TypeError) { cluster.connect_timeout(Object.new) }
     assert_kind_of(Ilios::Cassandra::Cluster, cluster.connect_timeout(10_000))
+    assert_raises(RangeError) { cluster.connect_timeout(-1) }
   end
 
   def test_request_timeout
@@ -66,6 +70,7 @@ class ClusterTest < Minitest::Test
 
     assert_raises(TypeError) { cluster.request_timeout(Object.new) }
     assert_kind_of(Ilios::Cassandra::Cluster, cluster.request_timeout(10_000))
+    assert_raises(RangeError) { cluster.request_timeout(-1) }
   end
 
   def test_resolve_timeout
@@ -73,6 +78,7 @@ class ClusterTest < Minitest::Test
 
     assert_raises(TypeError) { cluster.resolve_timeout(Object.new) }
     assert_kind_of(Ilios::Cassandra::Cluster, cluster.resolve_timeout(10_000))
+    assert_raises(RangeError) { cluster.resolve_timeout(-1) }
   end
 
   def test_constant_speculative_execution_policy
@@ -128,6 +134,33 @@ class ClusterTest < Minitest::Test
     assert_kind_of(Ilios::Cassandra::Cluster, cluster.serial_consistency(Ilios::Cassandra::Cluster::CONSISTENCY_LOCAL_SERIAL))
     assert_kind_of(Ilios::Cassandra::Cluster, cluster.serial_consistency(:serial))
     assert_kind_of(Ilios::Cassandra::Cluster, cluster.serial_consistency(:local_serial))
+  end
+
+  def test_speculative_execution_policy_converts_the_values_once
+    counter = Class.new do
+      attr_reader :calls
+
+      def initialize
+        @calls = 0
+      end
+
+      def to_int
+        @calls += 1
+        @calls == 1 ? 5 : -1
+      end
+    end
+
+    cluster = Ilios::Cassandra::Cluster.new
+
+    delay = counter.new
+    cluster.constant_speculative_execution_policy(delay, 1)
+
+    assert_equal(1, delay.calls)
+
+    executions = counter.new
+    cluster.constant_speculative_execution_policy(1, executions)
+
+    assert_equal(1, executions.calls)
   end
 
   def test_integer_option_converts_the_value_once

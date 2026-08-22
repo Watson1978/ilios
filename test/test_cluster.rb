@@ -117,7 +117,6 @@ class ClusterTest < Minitest::Test
     cluster = Ilios::Cassandra::Cluster.new
 
     assert_raises(TypeError) { cluster.consistency(Object.new) }
-    # CASS_CONSISTENCY_UNKNOWN (0xFFFF) is the only value the driver rejects
     assert_raises(ArgumentError) { cluster.consistency(0xFFFF) }
     assert_raises(ArgumentError) { cluster.consistency(-1) }
     assert_raises(ArgumentError) { cluster.consistency(99) }

@@ -290,9 +290,10 @@ static VALUE cluster_credentials(VALUE self, VALUE username, VALUE password)
     return self;
 }
 
-// The driver only rejects CASS_CONSISTENCY_UNKNOWN at set time; any other
-// out-of-range value is accepted and later fails every query with an
-// opaque protocol error, so validate the range here.
+// The driver only rejects CASS_CONSISTENCY_UNKNOWN (0xFFFF) at set time; any
+// other out-of-range value is accepted and later fails every query with an
+// opaque protocol error, so validate the range here. This also keeps UNKNOWN
+// away from the driver, which is why the setters ignore its return value.
 static void cluster_check_consistency(long value, const char *name)
 {
     if (value < CASS_CONSISTENCY_ANY || value > CASS_CONSISTENCY_LOCAL_ONE) {
@@ -359,7 +360,7 @@ static VALUE cluster_consistency(VALUE self, VALUE consistency)
     CassConsistency consistency_value = cluster_value_to_consistency(consistency, "consistency");
 
     GET_CLUSTER(self, cassandra_cluster);
-    cluster_check_error(cass_cluster_set_consistency(cassandra_cluster->cluster, consistency_value), "consistency");
+    cass_cluster_set_consistency(cassandra_cluster->cluster, consistency_value);
 
     return self;
 }
@@ -390,7 +391,7 @@ static VALUE cluster_serial_consistency(VALUE self, VALUE consistency)
     }
 
     GET_CLUSTER(self, cassandra_cluster);
-    cluster_check_error(cass_cluster_set_serial_consistency(cassandra_cluster->cluster, consistency_value), "serial_consistency");
+    cass_cluster_set_serial_consistency(cassandra_cluster->cluster, consistency_value);
 
     return self;
 }

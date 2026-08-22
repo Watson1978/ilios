@@ -428,8 +428,8 @@ static VALUE statement_snapshot_value(const CassDataType *data_type, VALUE value
 
             length = RARRAY_LEN(array);
             snapshot = rb_ary_new_capa(length);
-            for (long i = 0; i < length; i++) {
-                rb_ary_push(snapshot, statement_snapshot_value(element_type, RARRAY_AREF(array, i)));
+            for (long i = 0; i < RARRAY_LEN(array); i++) {
+                rb_ary_push(snapshot, statement_snapshot_value(element_type, rb_ary_entry(array, i)));
             }
             return rb_ary_freeze(snapshot);
         }

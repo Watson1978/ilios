@@ -426,6 +426,30 @@ class StatementTest < Minitest::Test
     # rubocop:enable Style/StringHashKeys
   end
 
+  def test_bind_collection_element_shrinking_the_array
+    shrinker = Class.new do
+      def initialize(array)
+        @array = array
+      end
+
+      def to_str
+        @array.clear
+        'a'
+      end
+    end
+
+    array = []
+    array << shrinker.new(array)
+    100.times { array << 'b' }
+
+    # snapshotting must stop at the shrunk length instead of reading past the reallocated buffer
+    @insert_statement.bind(set: array)
+
+    results = insert_and_get_results
+
+    assert_equal(Set['a'], results.first['set'])
+  end
+
   private
 
   def insert_and_get_results

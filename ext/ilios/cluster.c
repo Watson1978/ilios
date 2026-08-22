@@ -86,16 +86,18 @@ static VALUE cluster_connect(VALUE self)
 static VALUE cluster_hosts(VALUE self, VALUE hosts)
 {
     CassandraCluster *cassandra_cluster;
+    long length;
 
     GET_CLUSTER(self, cassandra_cluster);
 
     Check_Type(hosts, T_ARRAY);
-    if (RARRAY_LEN(hosts) == 0) {
+    length = RARRAY_LEN(hosts);
+    if (length == 0) {
         rb_raise(rb_eArgError, "No host exists.");
     }
 
-    for (int i = 0; i < RARRAY_LEN(hosts); i++) {
-        VALUE host = RARRAY_AREF(hosts, i);
+    for (long i = 0; i < length && i < RARRAY_LEN(hosts); i++) {
+        VALUE host = rb_ary_entry(hosts, i);
         cass_cluster_set_contact_points(cassandra_cluster->cluster, StringValueCStr(host));
     }
 

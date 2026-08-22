@@ -12,6 +12,27 @@ class ClusterTest < Minitest::Test
     assert_kind_of(Ilios::Cassandra::Cluster, cluster.hosts([CASSANDRA_HOST]))
   end
 
+  def test_hosts_element_growing_the_array
+    grower = Class.new do
+      def initialize(array)
+        @array = array
+      end
+
+      def to_str
+        @array << self.class.new(@array) if @array.size < 100
+        CASSANDRA_HOST
+      end
+    end
+
+    array = []
+    array << grower.new(array)
+
+    cluster = Ilios::Cassandra::Cluster.new
+
+    assert_kind_of(Ilios::Cassandra::Cluster, cluster.hosts(array))
+    assert_equal(2, array.size)
+  end
+
   def test_port
     cluster = Ilios::Cassandra::Cluster.new
 

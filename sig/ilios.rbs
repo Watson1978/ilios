@@ -88,7 +88,7 @@ module Ilios
     end
 
     class Future
-      def on_success: () { (Ilios::Cassandra::Result) -> void } -> self
+      def on_success: () { (Ilios::Cassandra::Result | Ilios::Cassandra::Statement) -> void } -> self
       def on_failure: () { (Ilios::Cassandra::ExecutionError) -> void } -> self
       def await: () -> self
     end

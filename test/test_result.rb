@@ -173,9 +173,8 @@ class ResultTest < Minitest::Test
       error = assert_raises(Ilios::Cassandra::ExecutionError) { results.to_a }
       assert_kind_of(Integer, error.code)
     ensure
-      # rubocop:disable Style/GlobalVars
+      # rubocop:disable-next Style/GlobalVars
       Ilios::Cassandra.log_level($default_test_log_level)
-      # rubocop:enable Style/GlobalVars
     end
 
     # teardown

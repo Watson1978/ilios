@@ -37,9 +37,8 @@ class StatementTest < Minitest::Test
     assert_nil(error.code)
 
     # valid values
-    # rubocop:disable Style/StringHashKeys
+    # rubocop:disable-next Style/StringHashKeys
     assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind({ 'id' => 1 }))
-    # rubocop:enable Style/StringHashKeys
     assert_kind_of(Ilios::Cassandra::Statement, @insert_statement.bind({ id: 1 }))
     assert_kind_of(
       Ilios::Cassandra::Statement,
@@ -363,9 +362,8 @@ class StatementTest < Minitest::Test
 
     results = insert_and_get_results
 
-    # rubocop:disable Style/StringHashKeys
+    # rubocop:disable-next Style/StringHashKeys
     assert_equal({ 'k1' => 1, 'k2' => 2 }, results.first['map'])
-    # rubocop:enable Style/StringHashKeys
   end
 
   def test_bind_nested_collections

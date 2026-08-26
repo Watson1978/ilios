@@ -4,9 +4,8 @@ require_relative 'helper'
 
 class CassandraTest < Minitest::Test
   def teardown
-    # rubocop:disable Style/GlobalVars
+    # rubocop:disable-next Style/GlobalVars
     Ilios::Cassandra.log_level($default_test_log_level)
-    # rubocop:enable Style/GlobalVars
   end
 
   def test_log_level

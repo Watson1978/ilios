@@ -13,15 +13,21 @@ env:
   TESTOPTS: --verbose
 
 jobs:
+  ruby-versions:
+    uses: ruby/actions/.github/workflows/ruby_versions.yml@master
+    with:
+      engine: cruby
+
   valgrind:
-    name: memcheck (Ruby ${{ matrix.ruby }})
+    needs: ruby-versions
     runs-on: ubuntu-latest
+
+    name: memcheck (Ruby ${{ needs.ruby-versions.outputs.latest }})
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         cassandra-version: ['5']
-        ruby: ['4.0']
     steps:
       - name: Start Cassandra v${{ matrix.cassandra-version }}
         run: |
@@ -36,7 +42,7 @@ jobs:
           sudo apt-get install -y valgrind
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: ${{ matrix.ruby }}
+          ruby-version: ${{ needs.ruby-versions.outputs.latest }}
           bundler-cache: true
       - name: Prepare tests
         run: bundle exec rake compile

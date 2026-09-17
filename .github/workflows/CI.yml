@@ -22,6 +22,7 @@ jobs:
       min_version: 3.4
 
   lint:
+    needs: ruby-versions
     runs-on: ubuntu-latest
 
     name: RuboCop
@@ -30,12 +31,13 @@ jobs:
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 4.0
+        ruby-version: ${{ needs.ruby-versions.outputs.latest }}
         bundler-cache: true
     - uses: r7kamura/rubocop-problem-matchers-action@v1
     - run: bundle exec rubocop --parallel
 
   rbs:
+    needs: ruby-versions
     runs-on: ubuntu-latest
 
     name: RBS
@@ -44,7 +46,7 @@ jobs:
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 4.0
+        ruby-version: ${{ needs.ruby-versions.outputs.latest }}
         bundler-cache: true
     - run: bundle exec rake rbs:validate
 

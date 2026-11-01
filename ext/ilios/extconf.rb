@@ -101,6 +101,8 @@ module CassandraDriverInstaller
         url: "https://github.com/datastax/cpp-driver/archive/#{Ilios::CASSANDRA_CPP_DRIVER_VERSION}.tar.gz",
         sha256: Ilios::CASSANDRA_CPP_DRIVER_SHA256
       }
+      # cpp-driver 2.17.1 is the final release, so apply local fixes for newer toolchains/libraries.
+      cassandra_recipe.patch_files = Dir[File.join(__dir__, 'patches', 'cpp-driver', '*.patch')]
       cassandra_recipe.cook
       if RUBY_PLATFORM.include?('darwin')
         xsystem(

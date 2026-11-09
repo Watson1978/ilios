@@ -267,6 +267,9 @@ static VALUE result_convert_row(const CassResult *result, const CassRow *row, si
 
         cass_result_column_name(result, i, &name, &name_length);
         key = rb_enc_interned_str(name, name_length, rb_utf8_encoding());
+        if (value == NULL) {
+            rb_exc_raise(result_check_value_error_new(CASS_ERROR_LIB_INDEX_OUT_OF_BOUNDS, key));
+        }
         rb_hash_aset(hash, key, result_convert_value(value, key));
     }
 

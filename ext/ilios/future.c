@@ -100,6 +100,9 @@ static void future_result_success_yield(CassandraFuture *cassandra_future)
 
                     cassandra_statement_obj = CREATE_STATEMENT(cassandra_statement);
                     cassandra_statement->prepared = cass_future_get_prepared(cassandra_future->future);
+                    if (cassandra_statement->prepared == NULL) {
+                        rb_raise(eExecutionError, "Unable to prepare query: no prepared statement was returned");
+                    }
                     cassandra_statement->statement = cass_prepared_bind(cassandra_statement->prepared);
                     cassandra_statement->session_obj = cassandra_future->session_obj;
 

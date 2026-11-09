@@ -65,6 +65,10 @@ static VALUE session_prepare(VALUE self, VALUE query)
     cassandra_statement_obj = CREATE_STATEMENT(cassandra_statement);
 
     cassandra_statement->prepared = cass_future_get_prepared(prepare_future);
+    if (cassandra_statement->prepared == NULL) {
+        cass_future_free(prepare_future);
+        rb_raise(eExecutionError, "Unable to prepare query: no prepared statement was returned");
+    }
     cassandra_statement->statement = cass_prepared_bind(cassandra_statement->prepared);
     cassandra_statement->session_obj = self;
     cass_future_free(prepare_future);
